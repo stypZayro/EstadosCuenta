@@ -8877,7 +8877,7 @@ const LoginSchema = z.object({
   usuario: z.string().min(1, 'usuario requerido'),
   password: z.string().min(1, 'password requerida')
 });
-
+const handlerLogin = validate(LoginSchema, 'body')
 app.post('/api/auth/login', loginLimiter, handlerLogin, async (req, res) => {
   try {
     // ✅ POST: usa body, no query
