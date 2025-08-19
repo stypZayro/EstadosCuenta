@@ -24,6 +24,9 @@ const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
+const xlsx = require('xlsx-style');
+const archiver = require('archiver');
+const sqlData=require('./insertAscToTable');
 
 const { v4: uuidv4 } = require('uuid'); // ✅ faltaba
 const { validate, authBearer, errorHandler, z } = require('./middlewares');
@@ -8830,6 +8833,1422 @@ enviarMailAnexo24semanalgeneral= async(nombreArchivo,transport) => {
 
       transport.close()
    });
+}
+/**************************************************************************************/
+/**************************************************************************************/
+/**************************************************************************************/
+
+app.get('/api/procesar-correo', async (req, res) => {
+   const comandoLeerMail = 'python leermailData.py';
+ 
+   exec(comandoLeerMail, (error, stdout, stderr) => {
+     if (error) {
+       console.error(`Error al ejecutar el script de leermail: ${error.message}`);
+       return res.status(500).json({ error: 'Error al ejecutar el script de leermail' });
+     }
+     if (stderr) {
+       console.error(`Error en la salida estándar de leermail: ${stderr}`);
+       return res.status(500).json({ error: 'Error en la salida estándar de leermail' });
+     }
+    //console.log(`Salida del script de leermail: ${stdout}`);
+ 
+     const carpeta = './archivos_adjuntos';
+     fs.readdir(carpeta, (error, archivos) => {
+       if (error) {
+         console.error(`Error al leer la carpeta: ${error}`);
+         return res.status(500).json({ error: 'Error al leer la carpeta' });
+       }
+ 
+       const nombresArchivos = { archivos: archivos };
+ 
+       fs.writeFile('nombres_archivos.json', JSON.stringify(nombresArchivos), (error) => {
+         if (error) {
+           console.error(`Error al escribir en el archivo JSON: ${error}`);
+           return res.status(500).json({ error: 'Error al escribir en el archivo JSON' });
+         }
+         const nombresArchivosJSON = JSON.stringify(nombresArchivos);
+         if (nombresArchivosJSON.length > 2) {
+           //console.log('Nombres de archivos almacenados en nombres_archivos.json' + JSON.stringify(nombresArchivos));
+           archivos.forEach(async (nombreArchivo) => {
+             const nombreSinExtension = nombreArchivo.slice(0, -5); // Elimina los últimos 5 caracteres (.xlsx)
+             //console.log("Valor individual:", nombreSinExtension);
+             const result=await sql.altafacturasencontradas(nombreSinExtension)
+             console.log(result)
+           });
+ 
+         }
+         else {
+           console.log('Sin info');
+
+         }
+ 
+         const comandoEliminarArchivos = `python eliminar_archivos.py ${carpeta}`;
+         exec(comandoEliminarArchivos, (error, stdout, stderr) => {
+           if (error) {
+             console.error(`Error al ejecutar el script de eliminar_archivos: ${error}`);
+             return res.status(500).json({ error: 'Error al ejecutar el script de eliminar_archivos' });
+           }
+           if (stderr) {
+             console.error(`Error en la salida estándar de eliminar_archivos: ${stderr}`);
+             return res.status(500).json({ error: 'Error en la salida estándar de eliminar_archivos' });
+           }
+           console.log(`Salida del script de eliminar_archivos: ${stdout}`);
+           return res.status(200).json({ message: 'Proceso de correo completado exitosamente' });
+         });
+       });
+     });
+   });
+});
+const columnasTablas = {
+  Inci: [
+    'Patente','Pedimento','SeccionAduanera','ConsecutivoRemesa','NumeroSeleccion',
+    'FechaInicioReconocimiento','HoraInicioReconocimiento','FechaFinReconocimiento','HoraFinReconocimiento',
+    'Fraccion','SecuenciaFraccion','ClaveDocumento','TipoOperacion','GradoIncidencia','FechaSeleccion'
+  ],
+  Sel: [
+    'Patente','Pedimento','SeccionAduanera','ConsecutivoRemesa','NumeroSeleccion','FechaSeleccion','HoraSeleccion','SemaforoFiscal','ClaveDocumento','TipoOperacion'
+  ],
+  tabla501: [
+    'Patente','Pedimento','SeccionAduanera','TipoOperacion','ClaveDocumento',
+    'SeccionAduaneraEntrada','CurpContribuyente','Rfc','CurpAgenteA','TipoCambio',
+    'TotalFletes','TotalSeguros','TotalEmbalajes','TotalIncrementables','TotalDeducibles',
+    'PesoBrutoMercancia','MedioTransporteSalida','MedioTransporteArribo','MedioTransporteEntrada_Salida',
+    'DestinoMercancia','NombreContribuyente','CalleContribuyente','NumInteriorContribuyente',
+    'NumExteriorContribuyente','CPContribuyente','MunicipioContribuyente','EntidadFedContribuyente',
+    'PaisContribuyente','TipoPedimento','FechaRecepcionPedimento','FechaPagoReal'
+  ],
+  tabla502: [
+    'Patente','Pedimento','SeccionAduanera','RfcTransportista','CurpTransportista','NombreTransportista','PaisTransporte','IdentificadorTransporte','FechaPagoReal'
+  ],
+  tabla503: [
+    'Patente','Pedimento','SeccionAduanera','NumeroGuia','TipoGuia','FechaPagoReal'
+  ],
+  tabla504: [
+    'Patente','Pedimento','SeccionAduanera','NumContenedor','TipoContenedor','FechaPagoReal'
+  ],
+ 
+tabla505: [
+  'Patente','Pedimento','SeccionAduanera','FechaFacturacion','NumeroFactura',
+  'TerminoFacturacion','MonedaFacturacion','ValorDolares','ValorMonedaExtranjera',
+  'PaisFacturacion','EntidadFedFacturacion','IndentFiscalProveedor','ProveedorMercancial',
+  'CalleProveedor','NumInteriorProveedor','NumExteriorProveedor','CpProveedor',
+  'MunicipioProveedor','FechaPagoReal'
+],
+
+  tabla506: [
+    'Patente','Pedimento','SeccionAduanera','TipoFecha','FechaOperacion','FechaValidacionPagoR'
+  ],
+  tabla507: [
+    'Patente','Pedimento','SeccionAduanera','ClaveCaso','IdentificadorCaso','TipoPedimento','ComplementoCaso','FechaPagoReal'
+  ],
+  tabla508: [
+    'Patente','Pedimento','SeccionAduanera','InstitucionEmisora','NumeroCuenta','FolioConstancia','FechaConstancia','TipoCuenta','ClaveGarantia','ValorUnitarioTitulo','TotalGarantia','CantidadUnidades','TitulosAsignados','FechaPagoReal'
+  ],
+  tabla509: [
+    'Patente','Pedimento','SeccionAduanera','ClaveContribucion','TasaContribucion','TipoTasa','TipoPedimento','FechaPagoReal'
+  ],
+  tabla510: [
+    'Patente','Pedimento','SeccionAduanera','ClaveContribucion','FormaPago','ImportePago','TipoPedimento','FechaPagoReal'
+  ],
+  tabla511: [
+    'Patente','Pedimento','SeccionAduanera','SecuenciaObservacion','Observaciones','TipoPedimento','FechaPagoReal'
+  ],
+  tabla512: [
+    'Patente','Pedimento','SeccionAduanera','PatenteAduanalOrig','PedimentoOriginal','SeccionAduaneraDespOrig','DocumentoOriginal','FechaOperacionOrig','FraccionOriginal','UnidadMedida','MercanciaDescargada','TipoPedimento','FechaPagoReal'
+  ],
+  tabla513: [
+    'Patente','Pedimento','SeccionAduanera','PatenteAutorizadaOrig','NumPedimentoOrig','SeccionAduanaOrig','FechaPagoOriginal','TipoContribucionCompensada','ImporteCompensado','TipoPedimento','FechaPagoReal'
+  ],
+  // === 520: usa el nombre correcto ===
+tabla520: [
+  'Patente','Pedimento','SeccionAduanera','IdentFiscalDestinatario',
+  'NombreDestinatarioMercancia','CalleDestinatario','NumInteriorDestinatario',
+  'NumExteriorDestinatario','CpDestinatario','MunicipioDestinatario',
+  'PaisDestinatario','FechaPagoReal'
+],
+   tabla551: [
+   'Patente','Pedimento','SeccionAduanera','Fraccion','SecuenciaFraccion','SubdivisionFraccion',
+   'DescripcionMercancia','PrecioUnitario','ValorAduana','ValorComercial','ValorDolares',
+   'CantidadUMComercial','UnidadMedidaComercial','CantidadUMTarifa','UnidadMedidaTarifa',
+   'ValorAgregaddo','ClaveVinculacion','MetodoValorizacion','CodigoMercanciaProducto',
+   'MarcaMercanciaProducto','ModeloMercanciaProducto','PaisOrigenDestino','PaisCompradorVendedor',
+   'EntidadFedOrigen','EntidadFedDestino','EntidadFedComprador','EntidadFedVendedor',
+   'TipoOperacion','ClaveDocumento','FechaPagoReal'
+    
+  ],
+  tabla552: [
+    'Patente','Pedimento','SeccionAduanera','Fraccion','SecuenciaFraccion','VinNumeroSerie','KilometrajeVehiculo','FechaPagoReal'
+  ],
+  tabla553: [
+    'Patente','Pedimento','SeccionAduanera','Fraccion','SecuenciaFraccion','ClavePermiso','FirmaDescargo','NumeroPermiso','ValorComercialDolares','CantidadMUMTarifa','FechaPagoReal'
+  ],
+  tabla554: [
+    'Patente','Pedimento','SeccionAduanera','Fraccion','SecuenciaFraccion','ClaveCaso','IdentificadorCaso','ComplementoCaso','FechaPagoReal'
+  ],
+  tabla555: [
+    'Patente','Pedimento','SeccionAduanera','Fraccion','SecuenciaFraccion','InstitucionEmisora','NumeroCuenta','FolioConstancia','FechaConstancia','ClaveGarantia','ValorUnitarioTitulo','TotalGarantia','CantidadUnidadesMedida','TitulosAsignados','FechaPagoReal'
+  ],
+  tabla556: [
+    'Patente','Pedimento','SeccionAduanera','Fraccion','SecuenciaFraccion','ClaveContribucion','TasaContribucion','TipoTasa','FechaPagoReal'
+  ],
+  tabla557: [
+    'Patente','Pedimento','SeccionAduanera','Fraccion','SecuenciaFraccion','ClaveContribucion','FormaPago','ImportePago','FechaPagoReal'
+  ],
+  tabla558: [
+    'Patente','Pedimento','SeccionAduanera','Fraccion','SecuenciaFraccion','SecuenciaObservacion','Observaciones','FechaPagoReal'
+  ],
+  tabla701: [
+    'Patente','Pedimento','SeccionAduanera','ClaveDocumento','FechaPago','PedimentoAnterior','PatenteAnterior','SeccionAduaneraAnterior','DocumentoAnterior','FechaOperacionAnterior','PedimentoOriginal','PatenteAduanalOriginal','SeccionAduaneraDespOrig','FechaPagoReal'
+  ],
+  tabla702: [
+    'Patente','Pedimento','SeccionAduanera','ClaveContribucion','FormaPago','ImportePago','TipoPedimento','FechaPagoReal'
+  ]
+};
+
+// ---- 2. Alias automáticos (agrega aquí cualquier variante real de tus archivos) ----
+const aliasColumnas = {
+
+  FechaValidacionPagoR: 'FechaPagoReal',
+  FechaOperacion: 'Fechaoperacion',
+  FraccionOriginal: 'Fraccionoriginal',
+  ValorAgregado: 'ValorAgregaddo',
+  PatenteAduanalOrig: 'PatenteAduanalOriginal',
+
+ // === Nuevos (corrigen los .asc que recibes) ===
+  // 505
+  ProveedorMercancia: 'ProveedorMercancial',
+  CalleProveerdor: 'CalleProveedor',                 // por si aparece esta variante
+  EntidadFederativa: 'EntidadFedFacturacion',        // por si te mandan esta abreviación
+
+    // 520
+  IndentFiscalDestinatario: 'IdentFiscalDestinatario',
+  MunicpioDestinatario: 'MunicipioDestinatario',
+  IdentidadFiscalProveedor: 'IndentFiscalProveedor',
+
+  // 702 (variantes posibles)
+'Tipo_Pedimento': 'TipoPedimento',
+  'TIPO_PEDIMENTO': 'TipoPedimento',
+  'Tipo pedimento': 'TipoPedimento',
+  'Tipopedimento' : 'TipoPedimento',
+  'TP'            : 'TipoPedimento',
+  'Tipo de Pedimento': 'TipoPedimento',   // extra
+  'Tipo de pedimento': 'TipoPedimento',   // extra
+
+  // por si en 505 te llega la otra variante de ident fiscal:
+  IdentidadFiscalProveedor: 'IndentFiscalProveedor',
+};
+
+// ---- 3. Define columnas numéricas por tabla (ajusta a tu realidad) ----
+const columnasNumericas = {
+  tabla501: ['TipoCambio', 'TotalFletes', 'TotalSeguros', 'TotalEmbalajes', 'TotalIncrementables', 'TotalDeducibles', 'PesoBrutoMercancia'],
+  tabla505: ['ValorDolares', 'ValorMonedaExtranjera'],
+  tabla551: ['PrecioUnitario', 'ValorAduana', 'ValorComercial', 'ValorDolares', 'CantidadUMComercial', 'CantidadUMTarifa', 'ValorAgregaddo'],
+  tabla702: ['ClaveContribucion','FormaPago','ImportePago','TipoPedimento'],
+};
+
+const ASC_DIR = path.join(__dirname, 'archivos_adjuntos');
+
+
+function stripBOM(s) {
+  if (s == null) return s;
+  if (typeof s !== 'string') return s;
+  if (s.charCodeAt(0) === 0xFEFF) return s.slice(1);
+  return s.replace(/^\uFEFF/, '');
+}
+
+// --- normaliza un header a minúsculas y alias canónico
+function normalizaCol(col) {
+  const limpio = stripBOM(String(col || '').trim());
+  const canon  = aliasColumnas[limpio] || limpio;
+  return canon.toLowerCase();
+}
+
+// --- NORMALIZA HEADERS (versión única; elimina la duplicada más abajo)
+function normalizaHeaders(headers) {
+  return headers.map(h => {
+    const limpio = stripBOM(String(h || '').trim());
+    return aliasColumnas[limpio] || limpio;
+  });
+}
+
+function detectaTablaPorHeader(headers) {
+  const normHeaders = headers.map(h => normalizaCol(stripBOM(h)));
+
+  // Firma mínima OBLIGATORIA para 702
+  const firma702 = [
+    'patente','pedimento','seccionaduanera',
+    'clavecontribucion','formapago','importepago',
+    'tipopedimento','fechapagoreal'
+  ];
+  if (firma702.every(c => normHeaders.includes(c))) return 'tabla702';
+
+  let candidato = null, best = -1, faltantes = [], extras = [];
+  for (const [tabla, columnas] of Object.entries(columnasTablas)) {
+    const colsNorm = columnas.map(normalizaCol);
+    const comunes = colsNorm.filter(c => normHeaders.includes(c));
+    if (comunes.length === colsNorm.length) return tabla;
+
+    if (comunes.length > best) {
+      candidato = tabla;
+      best = comunes.length;
+      faltantes = colsNorm.filter(c => !normHeaders.includes(c));
+      extras    = normHeaders.filter(c => !colsNorm.includes(c));
+    }
+  }
+  if (candidato) {
+    console.warn(`[ASC] Header parece de "${candidato}" pero faltan: ${faltantes.join(', ')}; extras: ${extras.join(', ')}`);
+    console.warn(`[ASC] Headers normalizados: ${JSON.stringify(normHeaders)}`);
+  } else {
+    console.warn(`[ASC] Headers desconocidos: ${JSON.stringify(normHeaders)}`);
+  }
+  return null;
+}
+
+
+// --- Limpia numéricos (null si vacío/"null", cambia "," por ".") ---
+function limpiaValoresNumericos(tabla, obj) {
+  (columnasNumericas[tabla] || []).forEach(col => {
+    let v = obj[col];
+    if (v === '' || v === '-' || v === null || v?.toLowerCase?.() === 'null') obj[col] = null;
+    else if (typeof v === 'string') obj[col] = v.replace(/,/g, '.');
+  });
+  return obj;
+}
+
+function normalizaHeaders(headers) {
+  return headers.map(h => {
+    const limpio = stripBOM(String(h || '').trim());
+    return aliasColumnas[limpio] || limpio;
+  });
+}
+const archivosNoValidados={}
+/* ------------ HELPERS PARA REPORTE ------------ */
+function calcVaciosPorTabla(tablasJSON = {}) {
+  const resultado = {};
+  for (const [tabla, rows] of Object.entries(tablasJSON)) {
+    if (!Array.isArray(rows) || rows.length === 0) continue;
+    const cols = Object.keys(rows[0] ?? {});
+    const cont = Object.fromEntries(cols.map(c => [c, 0]));
+    let totalCeldas = 0, totalVacios = 0;
+
+    for (const r of rows) {
+      for (const c of cols) {
+        totalCeldas++;
+        const v = r[c];
+        const vacio = v === '' || v === null || v === undefined ||
+                      (typeof v === 'string' && (v.trim() === '' || v.trim().toLowerCase() === 'null' || v.trim() === '-'));
+        if (vacio) {
+          cont[c]++;
+          totalVacios++;
+        }
+      }
+    }
+    const porCol = cols
+      .map(c => ({
+        col: c,
+        vacios: cont[c],
+        porcentaje: rows.length ? Math.round((cont[c] / rows.length) * 100) : 0
+      }))
+      .filter(x => x.vacios > 0)
+      .sort((a, b) => b.vacios - a.vacios)
+      .slice(0, 5); // Top 5 columnas con más vacíos
+
+    resultado[tabla] = { totalVacios, totalCeldas, porCol };
+  }
+  return resultado;
+}
+
+function fmt(num) {
+  return new Intl.NumberFormat('es-MX').format(num ?? 0);
+}
+
+/* ------------ MAIL HELPER (NUEVO) ------------ */
+async function enviarResumenCarga({
+  resumenOK = [],            // [{ tabla, registros }]
+  resumenVacio = [],         // ['tablaXXX', ...]
+  archivosNoValidados = [],  // ['123.asc', ...]
+  exito = true,
+  errorMsg = '',
+  tablasJSON = {}
+}) {
+  const kpiTablasConDatos    = resumenOK.length;
+  const kpiFilasInsertadas   = resumenOK.reduce((acc, r) => acc + (r.registros || 0), 0);
+  const kpiTablasVacias      = resumenVacio.length;
+  const kpiArchivosInvalidos = archivosNoValidados.length;
+
+  const vacios     = calcVaciosPorTabla(tablasJSON);
+  const totalNulls = Object.values(vacios).reduce((a, info) => a + (info?.totalVacios || 0), 0);
+  const hayVacios  = totalNulls > 0;
+
+  const fechaStr = new Date().toLocaleString('es-MX', { hour12: false });
+  const brand    = '#0F62FE';
+  const gray700  = '#374151';
+  const gray600  = '#4b5563';
+  const gray500  = '#6b7280';
+  const gray200  = '#e5e7eb';
+  const gray100  = '#f3f4f6';
+
+  // ---------- HTML formal / minimal ----------
+  const html = `
+  <div style="margin:0;padding:20px;background:#f7f7f8;font-family:Segoe UI,Arial,sans-serif;color:${gray700};">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:760px;margin:0 auto;background:#ffffff;border:1px solid ${gray200};border-radius:12px;overflow:hidden;">
+      <tr><td style="background:${brand};height:6px;"></td></tr>
+      <tr>
+        <td style="padding:16px 20px;border-bottom:1px solid ${gray200};">
+          <div style="font-size:18px;font-weight:700;letter-spacing:.2px;">Reporte de Carga ASC ${exito ? '<span style="color:#1b7f42">· OK</span>' : '<span style="color:#b42318">· ERROR</span>'}</div>
+          <div style="font-size:12px;color:${gray500};margin-top:2px;">${fechaStr}</div>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="padding:16px 20px;">
+          <div style="font-size:13px;color:${gray600};line-height:1.5;">
+            Este informe resume la carga de archivos <strong>.asc</strong>. Los valores vacíos
+            (<code style="background:${gray100};padding:0 4px;border-radius:4px;">''</code>,
+             <code style="background:${gray100};padding:0 4px;border-radius:4px;">-</code>,
+             <code style="background:${gray100};padding:0 4px;border-radius:4px;">"null"</code>)
+            se insertaron como <strong>NULL</strong>.
+          </div>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="padding:8px 12px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:8px;">
+            <tr>
+              <td style="width:25%;border:1px solid ${gray200};border-radius:10px;padding:10px;">
+                <div style="font-size:12px;color:${gray500};">Tablas con datos</div>
+                <div style="font-size:22px;font-weight:700;margin-top:4px;">${fmt(kpiTablasConDatos)}</div>
+              </td>
+              <td style="width:25%;border:1px solid ${gray200};border-radius:10px;padding:10px;">
+                <div style="font-size:12px;color:${gray500};">Filas insertadas</div>
+                <div style="font-size:22px;font-weight:700;margin-top:4px;">${fmt(kpiFilasInsertadas)}</div>
+              </td>
+              <td style="width:25%;border:1px solid ${gray200};border-radius:10px;padding:10px;">
+                <div style="font-size:12px;color:${gray500};">Campos vacíos (NULL)</div>
+                <div style="font-size:22px;font-weight:700;margin-top:4px;">${fmt(totalNulls)}</div>
+              </td>
+              <td style="width:25%;border:1px solid ${gray200};border-radius:10px;padding:10px;">
+                <div style="font-size:12px;color:${gray500};">Archivos no válidos</div>
+                <div style="font-size:22px;font-weight:700;margin-top:4px;">${fmt(kpiArchivosInvalidos)}</div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="padding:6px 20px 14px;">
+          <div style="font-weight:700;margin:8px 0 6px;font-size:14px;">Tablas con registros</div>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${gray200};border-radius:8px;overflow:hidden;font-size:13px;">
+            <thead>
+              <tr style="background:${gray100};">
+                <th align="left"  style="padding:10px;border-bottom:1px solid ${gray200};">Tabla</th>
+                <th align="right" style="padding:10px;border-bottom:1px solid ${gray200};"># filas</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${
+                resumenOK.length
+                ? resumenOK.map(r => `
+                  <tr>
+                    <td style="padding:10px;border-bottom:1px solid ${gray200};">${r.tabla}</td>
+                    <td style="padding:10px;border-bottom:1px solid ${gray200};text-align:right;">${fmt(r.registros)}</td>
+                  </tr>
+                `).join('')
+                : `<tr><td colspan="2" style="padding:12px;color:${gray500};">— Ninguna —</td></tr>`
+              }
+            </tbody>
+          </table>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="padding:0 20px 14px;">
+          <div style="font-weight:700;margin:10px 0 6px;font-size:14px;">Campos vacíos convertidos a NULL</div>
+          ${
+            Object.keys(vacios).length && hayVacios
+            ? Object.entries(vacios).map(([tabla, info]) => {
+                if (!info || info.totalVacios === 0) return '';
+                const filas = (tablasJSON?.[tabla]?.length) || 0;
+                return `
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0;border:1px solid ${gray200};border-radius:8px;overflow:hidden;font-size:12px;">
+                  <tr style="background:${gray100};">
+                    <td colspan="3" style="padding:8px 10px;border-bottom:1px solid ${gray200};">
+                      <strong>${tabla}</strong>
+                      <span style="color:${gray500}"> · Vacíos: ${fmt(info.totalVacios)} · Registros: ${fmt(filas)}</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th align="left"  style="padding:8px 10px;border-bottom:1px solid ${gray200};">Columna</th>
+                    <th align="right" style="padding:8px 10px;border-bottom:1px solid ${gray200};"># vacíos</th>
+                    <th align="right" style="padding:8px 10px;border-bottom:1px solid ${gray200};">% sobre filas</th>
+                  </tr>
+                  ${
+                    info.porCol.map(c => `
+                      <tr>
+                        <td style="padding:8px 10px;border-bottom:1px solid ${gray200};">${c.col}</td>
+                        <td style="padding:8px 10px;border-bottom:1px solid ${gray200};text-align:right;">${fmt(c.vacios)}</td>
+                        <td style="padding:8px 10px;border-bottom:1px solid ${gray200};text-align:right;">${fmt(c.porcentaje)}%</td>
+                      </tr>
+                    `).join('')
+                  }
+                </table>`;
+              }).join('')
+            : `<div style="padding:10px;border:1px solid ${gray200};border-radius:8px;color:${gray500};">— No se detectaron campos vacíos —</div>`
+          }
+          <div style="margin-top:6px;font-size:12px;color:${gray500}">
+            Nota: los valores vacíos indicados arriba se insertaron como <strong>NULL</strong>.
+          </div>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="padding:0 20px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:0;">
+            <tr>
+              <td style="vertical-align:top;padding-right:8px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${gray200};border-radius:8px;">
+                  <tr><td style="font-weight:700;padding:10px;border-bottom:1px solid ${gray200};">Tablas sin registros</td></tr>
+                  <tr><td style="padding:10px;font-size:13px;color:${gray700};">${kpiTablasVacias ? resumenVacio.join(', ') : `<span style="color:${gray500}">— Ninguna —</span>`}</td></tr>
+                </table>
+              </td>
+              <td style="vertical-align:top;padding-left:8px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${gray200};border-radius:8px;">
+                  <tr><td style="font-weight:700;padding:10px;border-bottom:1px solid ${gray200};">Archivos no válidos</td></tr>
+                  <tr><td style="padding:10px;font-size:13px;color:${gray700};">${kpiArchivosInvalidos ? archivosNoValidados.join(', ') : `<span style="color:${gray500}">— Ninguno —</span>`}</td></tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="padding:12px 20px;border-top:1px solid ${gray200};">
+          <div style="font-weight:700;color:${exito ? '#1b7f42' : '#b42318'};font-size:14px;">
+            ${exito ? '✔ Carga completada sin errores.' : '✖ La carga presentó errores.'}
+          </div>
+          ${!exito ? `<div style="margin-top:6px;font-size:12px;color:${gray500}">${errorMsg}</div>` : ''}
+          <div style="margin-top:10px;font-size:12px;color:${gray500}">Reporte automático · ${fechaStr}</div>
+        </td>
+      </tr>
+    </table>
+  </div>`;
+
+  // ---------- Texto plano ----------
+  let text = `Reporte de Carga ASC ${exito ? '(OK)' : '(ERROR)'}\n${fechaStr}\n\n`;
+  text += `Tablas con datos: ${kpiTablasConDatos}\n`;
+  text += `Filas insertadas: ${kpiFilasInsertadas}\n`;
+  text += `Campos vacíos (NULL): ${totalNulls}\n`;
+  text += `Tablas vacías: ${kpiTablasVacias}\n`;
+  text += `Archivos no válidos: ${kpiArchivosInvalidos}\n\n`;
+  text += `Tablas con registros:\n`;
+  if (resumenOK.length) resumenOK.forEach(r => { text += `  - ${r.tabla}: ${r.registros}\n`; });
+  else text += `  — Ninguna —\n`;
+  text += `\nCampos vacíos convertidos a NULL:\n`;
+  if (hayVacios) {
+    for (const [tabla, info] of Object.entries(vacios)) {
+      if (!info || info.totalVacios === 0) continue;
+      const filas = (tablasJSON?.[tabla]?.length) || 0;
+      text += `  - ${tabla}: vacíos=${info.totalVacios} / registros=${filas}\n`;
+      info.porCol.forEach(c => { text += `      · ${c.col}: ${c.vacios} (${c.porcentaje}%)\n`; });
+    }
+  } else {
+    text += `  — No se detectaron campos vacíos —\n`;
+  }
+  text += `\nTablas sin registros: ${kpiTablasVacias ? resumenVacio.join(', ') : '— Ninguna —'}\n`;
+  text += `Archivos no válidos: ${kpiArchivosInvalidos ? archivosNoValidados.join(', ') : '— Ninguno —'}\n`;
+  text += `\n${exito ? '✔ Carga completada sin errores.' : '✖ La carga presentó errores: ' + errorMsg}\n`;
+
+
+  /* ---------- envío ---------- */
+  const transport = nodemailer.createTransport({
+    host  : process.env.hostemail,
+    port  : process.env.portemail,
+    secure: true,
+    auth  : { user: process.env.useremail, pass: process.env.passemail },
+    tls   : { rejectUnauthorized:false }
+  });
+
+  await transport.sendMail({
+    from   : `"Carga ASC" <${process.env.useremail}>`,
+    to     : process.env.destinatarios || 'programacion2@zayro.com',
+    subject: exito ? 'Carga de Archivos DataStage – OK' : 'Carga de Archivos DataStage – ERROR',
+    text,
+    html
+  });
+}
+
+
+// ----------- ENDPOINT ROBUSTO /procesarasc ------------------
+app.get('/api/procesarasc', async (req, res) => {
+  try {
+
+   await new Promise((resolve, reject) => {
+      exec('python leermaildata.py', (err, stdout, stderr) => {
+        if (err) {
+          console.error('Error ejecutando script Python:', stderr || err);
+          return reject(new Error('Error ejecutando script Python.'));
+        }
+        resolve();
+      });
+    });
+/* 1)  lee carpeta */
+    if(!fs.existsSync(ASC_DIR)) fs.mkdirSync(ASC_DIR);
+    const files = fs.readdirSync(ASC_DIR).filter(f => f.toLowerCase().endsWith('.asc'));
+
+    const tablasJSON={}, archivosNoValidos=[];
+    for(const file of files){
+      const lines = fs.readFileSync(path.join(ASC_DIR,file),'utf8')
+                      .split(/\r?\n/).filter(l=>l.trim());
+      if(lines.length<2) continue;
+
+      const headers = lines[0].split('|').map(h=>h.trim());
+      const tabla   = detectaTablaPorHeader(headers);
+      if(!tabla){ archivosNoValidos.push(file); continue; }
+
+      const headersNorm = normalizaHeaders(headers);
+      for(const ln of lines.slice(1)){
+        const vals = ln.split('|').map(v=>v.trim());
+        const obj={};
+        columnasTablas[tabla].forEach(col=>{
+          const idx = headersNorm.findIndex(h=>h.toLowerCase()===col.toLowerCase());
+          obj[col]= idx>-1 ? vals[idx] : '';
+        });
+        limpiaValoresNumericos(tabla,obj);
+        (tablasJSON[tabla]=tablasJSON[tabla]||[]).push(obj);
+      }
+    }
+
+    /* 2) resumen */
+    const resumenOK     = Object.entries(tablasJSON).map(([t,a])=>({tabla:t,registros:a.length}));
+    const tablasVacias  = Object.keys(columnasTablas)
+                                .filter(t => !(t in tablasJSON));
+
+    /* 3) ejecuta SP */
+    let ok=true, errMsg='';
+    try{ await sqlData.ejecutaSPconJSON(tablasJSON); }
+    catch(e){ ok=false; errMsg=e.message||'Fallo SP'; }
+
+    /* 4) correo */
+    await enviarResumenCarga({
+      resumenOK,
+      resumenVacio: tablasVacias,
+      archivosNoValidados: archivosNoValidos,
+      exito: ok,
+      errorMsg: errMsg
+    });
+
+    /* 5) respuesta HTTP */
+    if(ok) res.json({ok:true,resumenOK,tablasVacias,archivosNoValidados});
+    else   res.status(500).json({ok:false,error:errMsg,resumenOK,tablasVacias,archivosNoValidados});
+
+  }catch(e){
+    console.error(e);
+    res.status(500).json({ok:false,error:e.message||e});
+  }
+});
+
+/*************************************************************************************** */
+app.get('/api/revisarexisteboxid', async (req, res) => {
+  const comandoLeerMail = 'python leermailboxid.py';
+
+  exec(comandoLeerMail, (error, stdout, stderr) => {
+    if (error) {
+        console.error(`Error al ejecutar el script de leermail: ${error.message}`);
+      return res.status(500).json({ error: 'Error al ejecutar el script de leermail' });
+    }
+    if (stderr) {
+      console.error(`Error en la salida estándar de leermail: ${stderr}`);
+      return res.status(500).json({ error: 'Error en la salida estándar de leermail' });
+    }
+
+    const carpeta = './archivos_boxid';
+    fs.readdir(carpeta, async (error, archivos) => {
+      if (error) {
+        console.error(`Error al leer la carpeta: ${error}`);
+        return res.status(500).json({ error: 'Error al leer la carpeta' });
+      }
+
+      if (archivos.length === 0) {
+        return res.status(400).json({ error: 'No se encontraron archivos en la carpeta' });
+      }
+
+      // Procesar cada archivo Excel
+      for (const archivo of archivos) {
+        const rutaArchivo = path.join(carpeta, archivo);
+
+        // Solo procesar archivos Excel
+        if (rutaArchivo.endsWith('.xlsx')) {
+          console.log(`Procesando archivo: ${archivo}`);
+          if (!archivo.startsWith('LCN')) {
+            console.log(`El archivo ${archivo} no comienza con 'LCN'. Ignorando...`);
+            // Si se va por el else, eliminamos el archivo
+            fs.unlink(rutaArchivo, (err) => {
+              if (err) {
+                console.error(`Error al eliminar el archivo ${archivo}:`, err);
+              } else {
+                console.log(`Archivo ${archivo} eliminado correctamente.`);
+              }
+            });
+            
+          }
+          else {
+            
+          
+
+          // Leer el archivo Excel
+          const workbook = xlsx.readFile(rutaArchivo);
+          const sheetName = workbook.SheetNames[0]; // Obtener la primera hoja
+          const worksheet = workbook.Sheets[sheetName];
+          const resultados = [];
+
+          // Comenzar la lectura desde la fila 3
+          let rowNumber = 3;
+          while (true) {
+            const cellAddress = `A${rowNumber}`; // Definir la dirección de la celda
+            const cell = worksheet[cellAddress];
+            const cellAddressR = `R${rowNumber}`; // Dirección de la celda en la columna 'R'
+            const cellR = worksheet[cellAddressR]; // Leer la celda de la columna 'R'
+            
+            if (!cell || !cell.v) break; // Si la celda está vacía, detener la lectura
+            
+            // Obtener el valor de la celda en la columna 'R'
+            const columnEValue =cellR ? cellR.v : null;
+
+            resultados.push({
+              columnE: columnEValue,
+              cellAddress: cellAddress.replace('A', 'R') // Guardar la dirección de la celda
+            });
+
+            rowNumber++;
+          }
+         
+          try { 
+            
+            const resul = await sql.sp_existeboxid(resultados);
+           
+            if (!resul || !Array.isArray(resul)) {
+                console.error('La respuesta del procedimiento almacenado no es un array.');
+                return res.status(500).json({ error: 'Error en la respuesta del procedimiento almacenado' });
+            }
+            const resulMap = resul.reduce((map, r) => {
+              map[r.Box_ID.trim().toUpperCase()] = { HB201: r.HB201, NO_PALLET: r.NO_PALLET,CUARENTENA: r.CUARENTENA }; // Normalizar Box_ID y almacenar HB201 y NO_PALLET
+              return map;
+          }, {});
+          /****************************************** */
+          const resulhb103 = await sql.sp_existeboxid103(resultados);
+          
+            
+            const resulMap103 = resulhb103.reduce((map, r) => {
+              // Solo almacenar el Box_ID en el mapa, usando null como valor o podrías poner true si prefieres
+              map[r.Box_ID.trim().toUpperCase()] = null;
+              return map;
+          }, {});
+          
+          /***************************************** */
+
+
+          if (!worksheet['!ref']) {
+            worksheet['!ref'] = 'A1:Z100';  // Ajusta según el tamaño de la hoja
+          }
+          // Obtener el rango actual de la hoja
+          const range = xlsx.utils.decode_range(worksheet['!ref']);
+          
+          // Ajustar el rango si es necesario para que incluya la columna Y y la fila 2
+          range.e.c = Math.max(range.e.c, 26); 
+          range.e.r = Math.max(range.e.r, 1);  // Fila 2
+          
+          // Actualizar el rango de la hoja
+          worksheet['!ref'] = xlsx.utils.encode_range(range);
+          
+          // Asignar valores a las celdas Y2 y Z2
+          worksheet['Y2'] = { v: 'HB201', t: 's' };  // Nombre de la columna Y
+          worksheet['Z2'] = { v: 'NO_PALLET', t: 's' };  // Nombre de la columna Z
+          worksheet['AA2'] = { v: 'CUARENTENA', t: 's' };  // Nombre de la columna Z
+          
+          
+          xlsx.writeFile(workbook, rutaArchivo);
+          resultados.forEach(r => {
+            const cleanedColumnE = String(r.columnE).trim().toUpperCase();  // Normalizar datos
+            const cell = worksheet[r.cellAddress]; // Obtener la celda correspondiente
+        
+            if (cell) {
+                const resulData = resulMap103[cleanedColumnE]; // Verificar si el Box_ID existe en el mapa
+                const rowNumber = r.cellAddress.match(/\d+/)[0]; // Obtener el número de fila
+        
+                if (resulData !== undefined) {
+                    // Si el Box_ID existe, pintar de verde
+                    cell.s = {
+                        fill: {
+                            fgColor: { rgb: '00FF00' } // Verde
+                        }
+                    };
+        
+                   
+        
+                } else {
+                    // Si el Box_ID no existe, pintar de rojo
+                    cell.s = {
+                        fill: {
+                            fgColor: { rgb: 'FF0000' } // Rojo
+                        }
+                    };
+                }
+        
+            } else {
+                //console.warn(`Celda ${r.cellAddress} no encontrada. Valor: ${r.columnE}`);
+            }
+        });        
+          resultados.forEach(r => {
+            const cleanedColumnE = String(r.columnE).trim().toUpperCase();  // Normalizar datos
+            const cell = worksheet[r.cellAddress]; // Obtener la celda correspondiente
+        
+            if (cell) {
+                const resulData = resulMap[cleanedColumnE]; // Obtener el valor de HB201 para el Box_ID correspondiente
+                const rowNumber = r.cellAddress.match(/\d+/)[0];
+                const targetCell = worksheet[`Y${rowNumber}`];
+                if (resulData !== undefined) {
+                    const { HB201, NO_PALLET, CUARENTENA } = resulData; // Obtener HB201 y NO_PALLET
+                    if(CUARENTENA){
+                      worksheet[`AA${rowNumber}`] = { v: 1 };
+                    }else{
+                      worksheet[`AA${rowNumber}`] = { v: 0 };
+                    }
+                    
+                    
+                    // Si HB201 es 1, pintar verde; si es 0, pintar rojo
+                    if (HB201) {
+                      worksheet[`Y${rowNumber}`] = { v: 1 || 0 }; 
+                      worksheet[`Z${rowNumber}`] = { v: NO_PALLET || '' };
+                      
+                        
+                        
+                        //console.log(worksheet)
+                        //console.log(`Valores asignados a fila ${rowNumber}: HB201 = ${HB201}, NO_PALLET = ${NO_PALLET}`);
+                       
+                    } else {
+                      worksheet[`Y${rowNumber}`] = { v: 0 }; 
+                      worksheet[`Z${rowNumber}`] = { v: '' };
+                     
+                        
+                    }
+                    
+        
+                } else {
+                  worksheet[`Y${rowNumber}`] = { v: '' }; 
+                  worksheet[`Z${rowNumber}`] = { v: '' };
+                  
+                };
+                    //console.warn(`No se encontró HB201 para el valor: ${cleanedColumnE}`);
+                }
+            
+          });
+          resultados.forEach(r => {
+            const cleanedColumnE = String(r.columnE).trim().toUpperCase();  // Normalizar datos
+            const cell = worksheet[r.cellAddress]; // Obtener la celda correspondiente
+        
+            if (cell) {
+                const resulData = resulMap[cleanedColumnE]; // Obtener el valor de HB201 para el Box_ID correspondiente
+                const rowNumber = r.cellAddress.match(/\d+/)[0];
+                const targetCell = worksheet[`Y${rowNumber}`];
+                if (resulData !== undefined) {
+                    const { HB201, NO_PALLET, CUARENTENA } = resulData; // Obtener HB201 y NO_PALLET
+                    if(CUARENTENA){
+                      worksheet[`AA${rowNumber}`] = { v: 1 };
+                    }else{
+                      worksheet[`AA${rowNumber}`] = { v: 0 };
+                    }
+                    
+                    
+                    // Si HB201 es 1, pintar verde; si es 0, pintar rojo
+                    if (HB201) {
+                     
+                      targetCell.s = {
+                            fill: {
+                                fgColor: { rgb: '00FF00' } // Verde
+                            }
+                        };  
+                        
+                        
+                        
+                        //console.log(worksheet)
+                        //console.log(`Valores asignados a fila ${rowNumber}: HB201 = ${HB201}, NO_PALLET = ${NO_PALLET}`);
+                       
+                    } else {
+                      if(CUARENTENA){
+                        targetCell.s = {
+                          fill: {
+                              fgColor: { rgb: 'FFFF00' } // Rojo
+                          }
+                      };
+
+                      }else{
+                        targetCell.s = {
+                          fill: {
+                              fgColor: { rgb: 'FF0000' } // Rojo
+                          }
+                      };
+
+                      }
+                      
+                        
+                    }
+                    
+        
+                } else {
+                 
+                  targetCell.s = {
+                    fill: {
+                        fgColor: { rgb: 'FFFF00' } //Amarillo
+                    }
+                };
+                    //console.warn(`No se encontró HB201 para el valor: ${cleanedColumnE}`);
+                }
+            } else {
+                console.warn(`Celda ${r.cellAddress} no encontrada. Valor: ${r.columnE}`);
+            }
+          }); 
+          const newWorkbook = new ExcelJS.Workbook(); // Crear un nuevo workbook
+            const newSheet = newWorkbook.addWorksheet('Box ID que no existen'); // Agregar nueva hoja
+
+            // Agregar cabeceras a la nueva hoja
+            newSheet.addRow(['Box_ID', 'PO_LCN', 'POD_LCN', 'HB201', 'NO_PALLET', 'CUARENTENA']);
+
+            // Obtener los resultados de los Box_ID que no existen
+            const noExistResults = await sql.sp_noexisteboxid(resultados);
+              if (noExistResults && noExistResults.length > 0) {
+              noExistResults.forEach(row => {
+                newSheet.addRow([row.Box_ID, row.PO_LCN, row.POD_LCN, row.HB201, row.NO_PALLET, row.CUARENTENA]);
+              });
+            } else {
+              console.log("noExistResults está vacío, no se agregarán filas.");
+            }
+
+            // Guardar la nueva hoja como archivo Excel
+            const tempFilePath = path.join('BOX_ID_No_Existen'+archivo);
+            await newWorkbook.xlsx.writeFile(tempFilePath);
+            console.log(`Nueva hoja guardada en: ${tempFilePath}`);
+
+            // Guardar el archivo modificado
+            await xlsx.writeFile(workbook, rutaArchivo);
+            console.log(`Archivo modificado guardado: ${rutaArchivo}`);
+            await enviarMail(['sistemas@zayro.com'], archivo, rutaArchivo,carpeta,tempFilePath ); // Pasar los parámetros necesarios
+            return res.status(200).json({ message: 'Proceso de correo completado exitosamente' });
+          } catch (e) {
+            console.error(`Error al llamar al procedimiento almacenado: ${e.message}`);
+          }
+        }
+      }
+    }
+    });
+    
+
+  });
+});
+const enviarMail = async (correos, nombreArchivo, pathExcel, carpeta, tempFilePath ) => {
+  const config = {
+      host: process.env.hostemail,
+      port: process.env.portemail,
+      secure: true,
+      auth: {
+          user: process.env.useremail,
+          pass: process.env.passemail
+      },
+      tls: {
+          rejectUnauthorized: false,
+      },
+  };
+
+  const zipFilePath = pathExcel.replace(/\.xlsx$/, '.zip'); // Cambia la extensión a .zip
+
+  // Comprimir ambos archivos antes de enviarlos
+  await compressFile([pathExcel, tempFilePath], zipFilePath);
+
+  const mensaje = {
+      from: 'sistemas@zayro.com',
+      to: correos.join(','), // Convertir la lista de correos en una cadena
+      subject: 'REPORT COMPARE KMC-ZAYRO',
+      attachments: [
+          {
+              filename: nombreArchivo.replace(/\.xlsx$/, '.zip'), // Usar el nombre del archivo proporcionado
+              path: zipFilePath, // Usar la ruta del archivo Excel comprimido
+          },
+      ],
+      text: 'REPORT COMPARE KMC-ZAYRO',
+  };
+
+  const transport = nodemailer.createTransport(config);
+  transport.verify().then(() => console.log("Configuración de correo verificada.")).catch((error) => console.log(error));
+  
+  transport.sendMail(mensaje, (error, info) => {
+      if (error) {
+          console.error('Error al enviar el correo:', error);
+      } else {
+          console.log('Correo enviado:', info.response);
+          const comandoEliminarArchivos = `python eliminar_archivos.py ${carpeta}`;
+          exec(comandoEliminarArchivos, (error, stdout, stderr) => {
+            if (error) {
+              console.error(`Error al ejecutar el script de eliminar_archivos: ${error}`);
+            }
+            if (stderr) {
+              console.error(`Error en la salida estándar de eliminar_archivos: ${stderr}`);
+            }
+            console.log(`Salida del script de eliminar_archivos: ${stdout}`);
+          });
+      }
+      
+      // Cierra el transporte después de enviar el correo
+      transport.close();
+  });
+};
+
+function compressFile(inputFilePaths, outputZipPath) {
+  return new Promise((resolve, reject) => {
+    const output = fs.createWriteStream(outputZipPath);
+    const archive = archiver('zip', {
+      zlib: { level: 9 } // Nivel de compresión
+    });
+
+    output.on('close', () => {
+      console.log(`Archivo comprimido: ${outputZipPath} (${archive.pointer()} bytes)`);
+      resolve();
+    });
+
+    archive.on('error', (err) => {
+      reject(err);
+    });
+
+    archive.pipe(output);
+
+    // Agregar los archivos al zip
+    inputFilePaths.forEach(filePath => {
+      archive.file(filePath, { name: path.basename(filePath) });
+    });
+
+    archive.finalize();
+  });
+}
+
+///---------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------
+app.get('/api/descargarfacturaskmx', async (req, res) => {
+  const comandoLeerMail = 'python leermailfacturaskmx.py';
+  let bandera=false;
+  exec(comandoLeerMail, (error, stdout, stderr) => {
+    if (error) {
+        console.error(`Error al ejecutar el script de leermail: ${error.message}`);
+      return res.status(500).json({ error: 'Error al ejecutar el script de leermail' });
+    }
+    if (stderr) {
+      console.error(`Error en la salida estándar de leermail: ${stderr}`);
+      return res.status(500).json({ error: 'Error en la salida estándar de leermail' });
+    }
+
+    const carpeta = './FacturasKMX';
+    fs.readdir(carpeta, async (error, archivos) => {
+      if (error) {
+        console.error(`Error al leer la carpeta: ${error}`);
+        return res.status(500).json({ error: 'Error al leer la carpeta' });
+      }
+
+      if (archivos.length === 0) {
+        return res.status(400).json({ error: 'No se encontraron archivos en la carpeta' });
+      }
+
+      // Procesar cada archivo Excel
+      for (const archivo of archivos) {
+        const rutaArchivo = path.join(carpeta, archivo);
+
+        // Solo procesar archivos Excel
+        if (rutaArchivo.endsWith('.xlsx')) {
+          console.log(`Procesando archivo: ${archivo}`);
+          
+          const a=await sqlram.altafactura(archivo)
+          const resultadofactura= await sqlram.consultarfactura(archivo)
+          
+          //console.log(resultadofactura)
+          if (resultadofactura[0].enviado==1)
+          {
+            // Leer el archivo Excel
+            try {
+            
+              const workbook = new ExcelJS.Workbook();
+              workbook.calcProperties.fullCalcOnLoad = true;
+
+              //await workbook.xlsx.load(rutaArchivo);
+              await workbook.xlsx.readFile(rutaArchivo);
+              const resultados = [];
+              let valorN4Asignado = false;
+          
+              
+              // Procesar las hojas EXP_PAC_D
+              workbook.eachSheet(sheet => {
+                if (sheet.name.startsWith('EXP_PAC_D')) {
+                  if (!valorN4Asignado) {
+                    valorN4Asignado = true;
+                    const valorN4 = sheet.getCell('N4').value;
+                    resultados.push({ hoja: sheet.name, valorN4 });
+                  }
+          
+                  // Iniciar la lectura desde la fila 8
+                  for (let rowNumber = 8; rowNumber <= sheet.rowCount; rowNumber++) {
+                    const row = sheet.getRow(rowNumber);
+                    const columnAValue = row.getCell('A').value;
+                    if (columnAValue === null) break;
+          
+                    resultados.push({
+                      hoja: sheet.name,
+                      columnA: columnAValue,
+                      columnGW: row.getCell('AT').value,
+                    });
+                  }
+                }
+              });
+              
+              
+              // Eliminar todas las hojas que no empiezan con 'IMP_ATT'
+              workbook.eachSheet(sheet => {
+                if (!sheet.name.startsWith('IMP_ATT')) {
+                  workbook.removeWorksheet(sheet.id);
+                }
+              });
+          
+              //console.log(resultados)
+          
+              const primerResultado = resultados[0];
+              const valorN4PrimerResultado = primerResultado.valorN4;
+              //res.json(resultados)
+              //console.log(resultados)
+              //console.log(valorN4PrimerResultado +'usuario '+user+'resultados '+resultados)
+              const respuesta = await sqlSIS.facturakmx(valorN4PrimerResultado,'sitemas@zayro.com',resultados);
+              console.log(respuesta)
+              //const ws  = workbook.addWorksheet(valorN4PrimerResultado);
+              
+              //const wb = new ExcelJS.Workbook();
+              //const ws = workbook.addWorksheet(valorN4PrimerResultado);
+              // Agregar una nueva hoja en blanco al inicio del libro
+              const ws  = workbook.addWorksheet(valorN4PrimerResultado);
+              // Agregar valor en la celda B4
+              ws.getCell('B4').value = 'INVOICE NO. '+valorN4PrimerResultado;
+          
+              // Establecer los títulos de las columnas
+              const columnTitles = [
+                'LOG BOX ID', '     PART     ','MASTER KMS', 'QTY', 'UNIT OF', 'G/W', '        DATE IN        ', '      DATE OUT      ',
+                'DAYS', 'WEEKS', 'STORAGE', 'STORAGE', 'STORAGE',
+                'IN/OUT', 'IN/OUT', 'IN/OUT'
+              ];
+              ws.getRow(6).values = columnTitles;
+              ws.getRow(6).font = {
+                name: 'Arial',
+                color: '#000000',
+                size: 10,
+                bold: true,
+              };
+              const columnTitles2 = [
+                '', '', '', '', '', '', '',
+                '', '','', 'PALLETIZED', 'LOOSE', 'DOUBLE SKIDS',
+                'PALLETIZED', 'LOOSE', 'DOUBLE SKIDS'
+              ];
+              ws.getRow(7).values = columnTitles2;
+              ws.getRow(7).font = {
+                name: 'Arial',
+                color: '#000000',
+                size: 10,
+                bold: true,
+              };
+          
+              // Centrar el contenido de las columnas y autoajustar el ancho de las columnas
+              for (let i = 1; i <= columnTitles.length; i++) {
+                ws.getColumn(i).alignment = { horizontal: 'center' };
+              }
+          
+              ws.columns.forEach(column => {
+                let maxLength = 0;
+                column.eachCell({ includeEmpty: true }, cell => {
+                  const columnLength = cell.value ? cell.value.toString().length : 10;
+                  if (columnLength > maxLength) {
+                    maxLength = columnLength;
+                  }
+                });
+                column.width = maxLength < 10 ? 10 : maxLength + 2; // Establecer un ancho mínimo de columna
+              });
+              
+              
+              // Llenar los datos de respuesta en el archivo Excel
+              let numfila = 8;
+              const dollarFormat = '$#,##0.00'; // Formato de moneda
+              respuesta.forEach(renglon => {
+                      // Si LOG_BOX_ID no es 'ZZZZZZZ', agregamos los datos a las celdas correspondientes
+                if (renglon.LOG_BOX_ID === 'ZZZZZZZ') {
+                  ws.getCell(numfila, 2).value = 'Total de Master KMS';
+                  ws.getCell(numfila, 3).value = renglon.MasterKMS ;
+
+
+
+                  ws.getCell(numfila, 10).value = renglon.PART || '';
+                  
+                  ws.getCell(numfila, 11).value = { formula: 'SUM(' + 'K8:' + 'K' + (numfila - 1) + ')', result: 0 };
+                  ws.getCell(numfila, 11).numFmt = dollarFormat;
+                  ws.getCell(numfila, 12).value = { formula: 'SUM(' + 'L' + '8:' + 'L' + (numfila - 1) + ')', result: 0 };
+                  ws.getCell(numfila, 12).numFmt = dollarFormat;
+                  ws.getCell(numfila, 13).value = { formula: 'SUM(' + 'M' + '8:' + 'M' + (numfila - 1) + ')', result: 0 };
+                  ws.getCell(numfila, 13).numFmt = dollarFormat;
+                  ws.getCell(numfila, 14).value = { formula: 'SUM(' + 'N' + '8:' + 'N' + (numfila - 1) + ')', result: 0 };
+                  ws.getCell(numfila, 14).numFmt = dollarFormat;
+                  ws.getCell(numfila, 15).value = { formula: 'SUM(' + 'O' + '8:' + 'O' +(numfila - 1) + ')', result: 0 };
+                  ws.getCell(numfila, 15).numFmt = dollarFormat;
+                  ws.getCell(numfila, 16).value = { formula: 'SUM(' + 'P' + '8:' + 'P' + (numfila - 1) + ')', result: 0 };
+                  ws.getCell(numfila, 16).numFmt = dollarFormat;
+                  ws.getCell(numfila, 17).value = { formula: 'SUM(' + 'Q' + '8:' + 'Q' + (numfila - 1) + ')', result: 0 };
+                  ws.getCell(numfila, 17).numFmt = dollarFormat;
+                  workbook.eachSheet(sheet => {
+                    if (sheet.name.endsWith("(PAGE1)")) {
+                      const valorA3 = renglon.ADITIONAL !== 0 ? renglon.ADITIONAL / 4 : 0;
+                      sheet.getCell('A3').value = valorA3;
+                      sheet.getCell('A4').value = renglon.ADITIONAL !== 0 ? renglon.ADITIONAL : '-';
+
+                    }
+                  });
+                
+                }
+                else{
+                  ws.getCell(numfila, 1).value = renglon.LOG_BOX_ID || '';
+                  ws.getCell(numfila, 2).value = renglon.PART || '';
+                  ws.getCell(numfila, 3).value = renglon.MasterKMS || '';
+                  ws.getCell(numfila, 4).value = renglon.QTY || 0;
+                  ws.getCell(numfila, 5).value = renglon.UNIT_OF || ''
+                  resultados.forEach(res => {
+                    if (renglon.LOG_BOX_ID === res.columnA) {
+                        const columnGWValue = res.columnGW || 0; // Obtener el valor de la columna GW
+                        const formattedValue = parseFloat(columnGWValue).toFixed(2); // Formatear el valor con 2 decimales
+                        const valueWithUnit = `${formattedValue} KGS`; // Concatenar "KGS" al valor formateado
+                        ws.getCell(numfila, 6).value = valueWithUnit; // Asignar el valor formateado con la unidad a la celda
+                    }
+                  });
+                  ws.getCell(numfila, 7).value = renglon.DATE_IN;
+                  ws.getCell(numfila, 8).value = renglon.DATE_OUT;
+                  ws.getCell(numfila, 9).value = renglon.DAYS || 0;
+                  ws.getCell(numfila, 10).value = renglon.WEEKS || 0;
+          
+                  ws.getCell(numfila, 11).value = renglon.SP !== 0 ? renglon.SP : '-';
+                  ws.getCell(numfila, 11).numFmt = dollarFormat;
+          
+                  ws.getCell(numfila, 12).value = renglon.SL !== 0 ? renglon.SL : '-';
+                  ws.getCell(numfila, 12).numFmt = dollarFormat;
+          
+                  ws.getCell(numfila, 13).value = renglon.SD !== 0 ? renglon.SD : '-';
+                  ws.getCell(numfila, 13).numFmt = dollarFormat;
+          
+                  ws.getCell(numfila, 14).value = renglon.IOP !== 0 ? renglon.IOP : '-';
+                  ws.getCell(numfila, 14).numFmt = dollarFormat;
+          
+                  ws.getCell(numfila, 15).value = renglon.IOL !== 0 ? renglon.IOL : '-';
+                  ws.getCell(numfila, 15).numFmt = dollarFormat;
+          
+                  ws.getCell(numfila, 16).value = renglon.IOD !== 0 ? renglon.IOD : '-';
+                  ws.getCell(numfila, 16).numFmt = dollarFormat;
+          
+                 /* ws.getCell(numfila, 16).value = renglon.ADITIONAL !== 0 ? renglon.ADITIONAL : '-';
+                  ws.getCell(numfila, 16).numFmt = dollarFormat;*/
+          
+                }
+                
+                  numfila++;
+                  
+              });  
+              /********************************************************************* */
+              const impAttData = {};
+              let isFirstSheet = true; // Variable para controlar si es la primera hoja o no
+            
+              // Leer todas las hojas que empiecen con "IMP_ATT"
+              workbook.eachSheet(sheet => {
+                if (sheet.name.startsWith('IMP_ATT')) {
+                  const sheetData = [];
+                  let headers = [];
+          
+                  // Leer cada fila desde la fila 7
+                  for (let rowNumber = 7; rowNumber <= sheet.rowCount; rowNumber++) {
+                    // Saltar la fila 8 si es la primera hoja
+                    if (isFirstSheet && rowNumber === 8) {
+                      continue;
+                    }
+          
+                    const row = sheet.getRow(rowNumber);
+                    const rowData = {};
+          
+                    // Leer cada celda en la fila
+                    row.eachCell((cell, colNumber) => {
+                      const columnName = headers[colNumber - 1] ? headers[colNumber - 1].replace(/\s/g, '') : ''; // Verificar si el encabezado existe antes de reemplazar los espacios
+                      const cellValue = cell.value;
+          
+                      // Guardar los encabezados si estamos en la fila 7
+                      if (rowNumber === 7) {
+                        headers.push(cellValue);
+                      } else {
+                        // Guardar el valor de la celda bajo el nombre de la columna correspondiente
+                        rowData[columnName] = cellValue;
+                      }
+                    });
+          
+                    // Solo agregar datos si la fila no está vacía y tiene al menos una celda con valor
+                    if (Object.keys(rowData).length > 0) {
+                      sheetData.push(rowData);
+                    }
+                  }
+          
+                  // Agregar los datos de la hoja actual al objeto impAttData
+                  impAttData[sheet.name] = sheetData;
+          
+                  // Después de leer la primera hoja, cambia isFirstSheet a falso para que no se salte la fila 8 en las siguientes hojas
+                  isFirstSheet = false;
+                }
+              });
+              //res.json(impAttData);
+              await sqlSIS.guardafacturakmx(valorN4PrimerResultado,impAttData)
+              
+          
+              /********************************************************************* */
+              //const excelFilePath = path.join(__dirname, `${valorN4PrimerResultado}_Invoice.xlsx`);
+              const excelFilePath = path.join(__dirname, 'facturaskmx', `${valorN4PrimerResultado}_Invoice.xlsx`);
+              await workbook.xlsx.writeFile(excelFilePath);
+              fs.access(excelFilePath, fs.constants.F_OK, async (err) => {
+                if (err) {
+                  console.error('Archivo no encontrado:', err);
+                } else {
+                  await sqlram.actualizarfactura(archivo)
+                  bandera=true;
+                  console.log('Archivo guardado correctamente y disponible en la ruta especificada.');
+                }
+              });
+          
+          
+          
+            } catch (error) {
+              console.error(error);
+              //res.redirect('./cargafacturaskmx?error=true');
+            }
+          }
+          else {
+            // Si se va por el else, eliminamos el archivo
+            fs.unlink(rutaArchivo, (err) => {
+              if (err) {
+                console.error(`Error al eliminar el archivo ${archivo}:`, err);
+              } else {
+                console.log(`Archivo ${archivo} eliminado correctamente.`);
+              }
+            });
+          }
+
+
+         
+        }  
+      }
+      //console.log(bandera)
+      if (bandera==true){
+        enviarMailFacturasKMX('Sistemas@zayro,com',carpeta)
+        return res.status(200).json({ message: 'Proceso de correo completado exitosamente' });
+      }
+      else{
+        return res.status(200).json({ message: 'No hay archivos pendientes de enviar' });
+      }
+      
+    });
+    
+
+  });
+});
+const enviarMailFacturasKMX = async (correos, carpeta) => {
+    const config = {
+        host: process.env.hostemail,
+        port: process.env.portemail,
+        secure: true,
+        auth: {
+            user: process.env.useremail,
+            pass: process.env.passemail
+        },
+        tls: {
+            rejectUnauthorized: false,
+        },
+    };
+
+    const today = new Date();
+    const fecha = today.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    const zipFilePath = path.join(__dirname, `facturas_${fecha}.zip`);
+
+    // Comprimir la carpeta
+    await compressFolder(path.join(__dirname, 'facturaskmx'), zipFilePath);
+
+    const mensaje = {
+        from: 'sistemas@zayro.com',
+        to: 'sistemas@zayro.com',
+        //to: 'programacion@zayro.com', // Convertir la lista de correos en una cadena
+        subject: `FACTURAS KMX_${fecha}`,
+        attachments: [
+            {
+                filename: `facturas_${fecha}.zip`, // Usar el nombre del archivo comprimido
+                path: zipFilePath,
+            },
+        ],
+        text: 'FACTURAS KMX GENERADAS AUTOMATICAS',
+    };
+
+    const transport = nodemailer.createTransport(config);
+    transport.verify().then(() => console.log("Configuración de correo verificada."))
+        .catch((error) => console.log(error));
+
+    transport.sendMail(mensaje, async (error, info) => {
+        if (error) {
+            console.error('Error al enviar el correo:', error);
+        } else {
+            console.log('Correo enviado:', info.response);
+            
+            // Limpiar la carpeta
+            await limpiarCarpeta(path.join(__dirname, 'facturaskmx'));
+            // Eliminar el archivo comprimido
+            fs.unlink(zipFilePath, (err) => {
+                if (err) {
+                    console.error(`Error al eliminar el archivo comprimido: ${err}`);
+                } else {
+                    console.log(`Archivo comprimido eliminado: ${zipFilePath}`);
+                }
+            });
+        }
+
+        // Cierra el transporte después de enviar el correo
+        transport.close();
+    });
+};
+
+function compressFolder(inputFolderPath, outputZipPath) {
+    return new Promise((resolve, reject) => {
+        const output = fs.createWriteStream(outputZipPath);
+        const archive = archiver('zip', {
+            zlib: { level: 9 } // Nivel de compresión
+        });
+
+        output.on('close', () => {
+            console.log(`Archivo comprimido: ${outputZipPath} (${archive.pointer()} bytes)`);
+            resolve();
+        });
+
+        archive.on('error', (err) => {
+            reject(err);
+        });
+
+        archive.pipe(output);
+        // Agregar todos los archivos de la carpeta
+        archive.directory(inputFolderPath, false); // false para no incluir la carpeta en el zip
+        archive.finalize();
+    });
+}
+async function limpiarCarpeta(carpeta) {
+    const archivos = await fs.promises.readdir(carpeta);
+    const eliminarArchivos = archivos.map(archivo => fs.promises.unlink(path.join(carpeta, archivo)));
+    await Promise.all(eliminarArchivos);
+    console.log(`Carpeta ${carpeta} limpiada.`);
 }
 /**************************************************************************************/
 /**************************************************************************************/

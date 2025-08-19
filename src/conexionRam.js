@@ -112,10 +112,90 @@ async function sp_validartoken(token) {
     sql.close(); // Cierra la conexión
   }
 }
+  async function altafactura (numfactura)  {
+    try {
+      // Establecer la conexión
+      let respuesta
+      let pool =await sql.connect(config1);
+      let result = await pool.request().query("altafactura '"+numfactura+"'");
+      
+      // Verificar si el conjunto de resultados es null o tiene longitud cero
+      if (!result.recordset || result.recordset.length === 0) {
+        //console.log('No se encontraron resultados.');
+        respuesta=""
+        return respuesta;
+      }
+      else{
+        return result.recordset;
+      }
+      
+  
+    } catch (error) {
+      console.error('Error al conectar o consultar la base de datos:', error.message);
+    } finally {
+      // Cerrar la conexión
+      await sql.close();
+    }
+  };
+  async function consultarfactura (numfactura)  {
+    try {
+      // Establecer la conexión
+      let respuesta
+      let pool =await sql.connect(config1);
+      let result = await pool.request().query("consultarfactura '"+numfactura+"'");
+      // Verificar si el conjunto de resultados es null o tiene longitud cero
+      if (!result.recordset || result.recordset.length === 0) {
+        //console.log('No se encontraron resultados.');
+        respuesta=""
+        pool.close();
+        return respuesta;
+      }
+      else{
+        pool.close();
+        return result.recordset;
+      }
+      
+  
+    } catch (error) {
+      console.error('Error al conectar o consultar la base de datos:', error.message);
+    } finally {
+      // Cerrar la conexión
+      await sql.close();
+    }
+  };
+  async function actualizarfactura (numfactura)  {
+    try {
+      // Establecer la conexión
+      let respuesta
+      let pool =await sql.connect(config1);
+      let result = await pool.request().query("ramadre.dbo.actualizafactura '"+numfactura+"'");
+      // Verificar si el conjunto de resultados es null o tiene longitud cero
+      if (!result.recordset || result.recordset.length === 0) {
+        //console.log('No se encontraron resultados.');
+        respuesta=""
+        pool.close();
+        return respuesta;
+      }
+      else{
+        pool.close();
+        return result.recordset;
+      }
+      
+  
+    } catch (error) {
+      console.error('Error al conectar o consultar la base de datos:', error.message);
+    } finally {
+      // Cerrar la conexión
+      await sql.close();
+    }
+  };
 module.exports={
   obtenercampos:obtenercampos,
   sicadiario:sicadiario,
   sp_loginaceesostoken:sp_loginaceesostoken,
   sp_altaToken:sp_altaToken,
   sp_validartoken:sp_validartoken,
+  altafactura:altafactura,
+    consultarfactura:consultarfactura,
+    actualizarfactura:actualizarfactura,
 }

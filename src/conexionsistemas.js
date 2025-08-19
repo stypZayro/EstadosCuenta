@@ -165,7 +165,127 @@ async function sp_obtener_email(Referencia, servicio) {
     throw error;
   } 
 }
+async function guardafacturakmx (referencia,facturainformacion)  {
+    try {
+      // Establecer la conexión
+      const pool = new sql.ConnectionPool(config);
+      await pool.connect();
+      //console.log(facturainformacion)
+      const request = pool.request();
+       request.input('referencia', sql.VarChar(50), referencia);
+       // Agregar parámetro de entrada que contenga el JSON
+       request.input('json', sql.NVarChar(sql.MAX), JSON.stringify(facturainformacion));
+       
 
+       // Ejecutar el stored procedure
+      const result = await request.execute('FACTURASKMXADICIONALES');
+      const respuesta = result.recordset;
+
+      // Cerrar la conexión
+      await sql.close();
+
+      return respuesta;
+    } catch (error) {
+      console.error('Error al conectar o consultar la base de datos:', error.message);
+    } finally {
+      // Cerrar la conexión
+      await sql.close();
+    }
+  };
+  async function reportemensualsolocostos ()  {
+    try {
+      // Establecer la conexión
+      let respuesta
+      let pool =await sql.connect(config);
+      let result = await pool.request().query("sp_reporte_mensual_facturas_solo_totaltes");
+      // Verificar si el conjunto de resultados es null o tiene longitud cero
+      if (!result.recordset || result.recordset.length === 0) {
+        //console.log('No se encontraron resultados.');
+        respuesta=""
+        return respuesta;
+      }
+      else{
+        return result.recordset;
+      }
+      
+  
+    } catch (error) {
+      console.error('Error al conectar o consultar la base de datos:', error.message);
+    }
+  };
+async function reportemensual (referencia)  {
+    try {
+      // Establecer la conexión
+      let respuesta
+      let pool =await sql.connect(config);
+      let result = await pool.request().query("sp_reporte_mensual_facturas '"+referencia+"'");
+      // Verificar si el conjunto de resultados es null o tiene longitud cero
+      if (!result.recordset || result.recordset.length === 0) {
+        //console.log('No se encontraron resultados.');
+        respuesta=""
+        return respuesta;
+      }
+      else{
+        return result.recordset;
+      }
+      
+  
+    } catch (error) {
+      console.error('Error al conectar o consultar la base de datos:', error.message);
+    }
+  };
+  async function facturakmx(referencia, user, resultados) {
+    try {
+        // Establecer la conexión
+        let respuesta;
+        let pool = await sql.connect(config);
+        let request = pool.request();
+        request.input('Referencia', sql.NVarChar(255), referencia);
+        request.input('user', sql.NVarChar(255), user);
+        request.input('json', sql.NVarChar(sql.MAX), JSON.stringify( resultados));
+
+        let result = await request.execute('aduana.dbo.sp_FACTURAS_KMX');
+
+        // Verificar si el conjunto de resultados es null o tiene longitud cero
+        if (!result.recordset || result.recordset.length === 0) {
+            //console.log('No se encontraron resultados.');
+            respuesta = "";
+            return respuesta;
+        } else {
+            return result.recordset;
+        }
+    } catch (error) {
+        console.error('Error al conectar o consultar la base de datos:', error.message);
+    } finally {
+        // Cerrar la conexión
+        await sql.close();
+    }
+};
+async function facturakmx_inventario(esmensual) {
+    try {
+        // Establecer la conexión
+        let respuesta;
+        let pool = await sql.connect(config);
+        let request = pool.request();
+        request.input('esmensual', sql.NVarChar(255), esmensual);
+
+        let result = await request.execute('aduana.dbo.sp_FACTURAS_KMX_inventario');
+
+        // Verificar si el conjunto de resultados es null o tiene longitud cero
+        if (!result.recordset || result.recordset.length === 0) {
+            //console.log('No se encontraron resultados.');
+            respuesta = "";
+            return respuesta;
+        } else {
+            return result.recordset;
+        }
+    } catch (error) {
+        console.error('Error al conectar o consultar la base de datos:', error.message);
+    } finally {
+        // Cerrar la conexión
+        await sql.close();
+    }
+};
 module.exports={
     conexionsis:conexionsis,
     sp_obtener_datos_iden:sp_obtener_datos_iden,
@@ -175,4 +295,9 @@ module.exports={
     sp_actualizar_enviado:sp_actualizar_enviado,
     sp_obtener_traImpExp:sp_obtener_traImpExp,
     sp_obtener_email:sp_obtener_email,
-  }
+    guardafacturakmx:guardafacturakmx,
+    reportemensualsolocostos:reportemensualsolocostos,
+    reportemensual:reportemensual,
+    facturakmx:facturakmx,
+    facturakmx_inventario:facturakmx_inventario,
+}

@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "archiver": "^7.0.1",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
@@ -38,6 +39,7 @@
     "read-excel-file": "^5.7.1",
     "socket.io": "^4.8.1",
     "tedious": "^16.6.1",
+    "xlsx-style": "^0.8.13",
     "zod": "^4.0.17"
   },
   "devDependencies": {

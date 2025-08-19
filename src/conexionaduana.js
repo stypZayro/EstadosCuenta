@@ -701,6 +701,106 @@ async function sp_correos_ejecutivos_cliente_anexo24(cliente) {
     sql.close(); // Cierra la conexión
   }
 }
+ async function altafacturasencontradas (referencia)  {
+    try {
+      // Establecer la conexión
+      let respuesta
+      let pool =await sql.connect(config);
+      //console.log(referencia)
+      let result = await pool.request().query("aduana.dbo.sp_agregarfacturasarevisarasn "+"'"+referencia+"'");
+      //console.log(result)
+      // Verificar si el conjunto de resultados es null o tiene longitud cero
+      if (!result.recordset || result.recordset.length === 0) {
+        //console.log('No se encontraron resultados.');
+        respuesta=""
+        return respuesta;
+      }
+      else{
+        return result.recordset;
+      }
+      
+  
+    } catch (error) {
+      console.error('Error al conectar o consultar la base de datos:', error.message);
+    } 
+  };
+  async function sp_existeboxid(resultados) {
+    try {
+        // Establecer la conexión
+        let respuesta;
+        let pool = await sql.connect(config);
+        let request = pool.request();
+        request.input('partesjson', sql.NVarChar(sql.MAX), JSON.stringify( resultados));
+  
+        let result = await request.execute('aduana.dbo.sp_existeboxid');
+  
+        // Verificar si el conjunto de resultados es null o tiene longitud cero
+        if (!result.recordset || result.recordset.length === 0) {
+            //console.log('No se encontraron resultados.');
+            respuesta = "";
+            return respuesta;
+        } else {
+            return result.recordset;
+        }
+    } catch (error) {
+        console.error('Error al conectar o consultar la base de datos:', error.message);
+    } finally {
+        // Cerrar la conexión
+        await sql.close();
+    }
+  };
+  async function sp_noexisteboxid(resultados) {
+    try {
+        // Establecer la conexión
+        let respuesta;
+        let pool = await sql.connect(config);
+        let request = pool.request();
+        request.input('partesjson', sql.NVarChar(sql.MAX), JSON.stringify( resultados));
+  
+        let result = await request.execute('aduana.dbo.sp_noexisteboxid');
+  
+        // Verificar si el conjunto de resultados es null o tiene longitud cero
+        if (!result.recordset || result.recordset.length === 0) {
+            //console.log('No se encontraron resultados.');
+            respuesta = "";
+            return respuesta;
+        } else {
+            return result.recordset;
+        }
+    } catch (error) {
+        console.error('Error al conectar o consultar la base de datos:', error.message);
+    } finally {
+        // Cerrar la conexión
+        await sql.close();
+    }
+  };
+  async function sp_existeboxid103(resultados) {
+    try {
+        // Establecer la conexión
+        let respuesta;
+        let pool = await sql.connect(config);
+        let request = pool.request();
+        request.input('partesjson', sql.NVarChar(sql.MAX), JSON.stringify( resultados));
+  
+        let result = await request.execute('aduana.dbo.sp_existeboxid_103');
+  
+        // Verificar si el conjunto de resultados es null o tiene longitud cero
+        if (!result.recordset || result.recordset.length === 0) {
+            //console.log('No se encontraron resultados.');
+            respuesta = "";
+            return respuesta;
+        } else {
+            return result.recordset;
+        }
+    } catch (error) {
+        console.error('Error al conectar o consultar la base de datos:', error.message);
+    } finally {
+        // Cerrar la conexión
+        await sql.close();
+    }
+  };
+
+
 /******************************************/
 /******************************************/
 module.exports={
@@ -742,5 +842,9 @@ module.exports={
   sp_obtenerejecutivogerentesubcliente:sp_obtenerejecutivogerentesubcliente,
   sp_ObtenerPedimentos_Semanal:sp_ObtenerPedimentos_Semanal,
   sp_obtenerclientesreporteanexo24:sp_obtenerclientesreporteanexo24,
-  sp_correos_ejecutivos_cliente_anexo24:sp_correos_ejecutivos_cliente_anexo24
+  sp_correos_ejecutivos_cliente_anexo24:sp_correos_ejecutivos_cliente_anexo24,
+  altafacturasencontradas:altafacturasencontradas,
+  sp_existeboxid:sp_existeboxid,
+  sp_existeboxid103:sp_existeboxid103,
+  sp_noexisteboxid:sp_noexisteboxid,
 }
