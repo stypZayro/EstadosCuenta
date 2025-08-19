@@ -8878,7 +8878,7 @@ const LoginSchema = z.object({
   password: z.string().min(1, 'password requerida')
 });
 
-app.post('/auth/login', loginLimiter, async (req, res) => {
+app.post('/api/auth/login', loginLimiter, handlerLogin, async (req, res) => {
   try {
     // ✅ POST: usa body, no query
     const parsed = LoginSchema.safeParse(req.body);
