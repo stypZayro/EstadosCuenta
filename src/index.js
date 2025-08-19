@@ -36,7 +36,9 @@ const server = http.createServer(app);
 
 // ===== Config =====
 const PORT = process.env.PORT || 3001;
-
+const CORS_ORIGINS = (process.env.CORS_ORIGINS || 'https://www.zayro.com')
+  .split(',')
+  .map(s => s.trim());
 
 // ===== Seguridad / transporte base =====
 app.set('trust proxy', 1);
