@@ -12,7 +12,7 @@ download_folder = "archivos_adjuntos"
 # Verificar si el directorio existe, si no existe, crearlo
 if not os.path.exists(download_folder):
     os.makedirs(download_folder)
-
+#cambio de nombre
 
 # Datos de la cuenta de correo
 username = 'reportes@zayro.com'
