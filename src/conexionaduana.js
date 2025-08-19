@@ -2,21 +2,22 @@ const sql=require('mssql');
 const dotenv=require('dotenv');
 dotenv.config();
 const config={ 
-    server: process.env.server,
+    server: process.env.serveraduana,
     authentication:{
         type: 'default',
         options:{
             userName: process.env.user, 
-            password: process.env.password
+            password: process.env.passwordaduana
         }
     },
     options:{
-        port:1433,
+        port:23390,
         database: process.env.database,
         trustServerCertificate: true,
     },
     requestTimeout: 1300000,
 }
+
 async function getdata(){
   try{
     let pool = await sql.connect(config);
@@ -74,15 +75,15 @@ else{
     };
     obtenerFechaFinDeMes = () => {
       const fechaFin = new Date();
-      // Iniciar en este año, el siguiente mes, en el día 0 (así que así nos regresamos un día)
       return new Date(fechaFin.getFullYear(), fechaFin.getMonth() , fechaFin.getUTCDate());
-    }; 
+    };  
     fechaInicio = obtenerFechaInicioDeMes();
     fechaFin = obtenerFechaFinDeMes();
     fechaInicioFormateada = formatearFecha(fechaInicio);
     fechaFinFormateada = formatearFecha(fechaFin);
   }
 }
+/************************************************************************** */
 if(fechaInicioFormateada==''){
   formatearFecha = fecha => {
     const mes = fecha.getMonth() + 1;
@@ -111,23 +112,12 @@ if(fechaFinFormateada==''){
   fechaFin = obtenerFechaFinDeMes();
   fechaFinFormateada = formatearFecha(fechaFin);
 }
-//console.log(`El inicio de mes es ${fechaInicioFormateada} y el fin es ${fechaFinFormateada}`);
+console.log(`El inicio de mes es ${fechaInicioFormateada} y el fin es ${fechaFinFormateada}`);
 async function getdata_BebidasMundiales(){
   try{
     let pool =await sql.connect(config);
-    let res = await pool.request().query("SELECT T.TRAREFERENCIA 'REFERENCIA', CONVERT(varchar,R.FECHA_CREACION,103) 'FECHAAPERTURAPEDIMENTO',"+
-    "'BEBIDAS MUNDIALES S DE RL DE CV' 'CLIENTE', P.PRONOM 'PROVEEDOR', F.FACGNOFAC 'FACTURA',"+
-    "F.FOLIO_CFDI 'CFDI', CONVERT(varchar,F.FACGFEFAC,103) 'FECHAFACTURA','EXPORTACION' 'TIPOOPERACION',"+
-    "CONVERT(varchar,T.TRAFECHACRUCE,103) 'FECHACRUCE', '' 'c001caat', T.TRANUMCAJA 'CAJA', R.VEHICULO 'PLACAS', T.TRAPEDIMENTO 'PEDIMENTO' FROM"+
-    " TRAFICO T INNER JOIN TBLBOD B ON T.TRAREFERENCIA = B.BODREFERENCIA AND T.PREF = B.PREF"+
-    " INNER JOIN TBLFACTGEN F ON T.TRAREFERENCIA = F.FACGREF AND T.TRACLI = F.FACGCLI"+
-    " INNER JOIN REMESAS_GEN R ON T.TRAREFERENCIA = R.REFERENCIA AND T.PREF = R.PREF"+
-    " INNER JOIN REMESAS_DET RD ON R.ID_REMESA = RD.ID_REMESA AND F.FACGNOFAC = RD.NUMERO_FACTURA"+
-    " INNER JOIN PROCLI P ON T.TRAPROCLI = P.PROVEEDOR_ID"+
-    " WHERE TRACLI = '2327' AND T.TRAIMPEXP = '0' AND R.FECHA_CREACION BETWEEN '" +fechaInicioFormateada+ "' AND '"+ fechaFinFormateada+
-    "' GROUP BY T.TRAREFERENCIA, R.FECHA_CREACION, P.PRONOM, F.FACGNOFAC, F.FACGFEFAC,"+
-    " T.TRAFECHACRUCE, T.TRANUMCAJA, T.TRAPEDIMENTO, T.TRAPLACAS, F.FOLIO_CFDI, R.VEHICULO"+
-    " ORDER BY R.FECHA_CREACION");
+    let res = await pool.request().query("exec sp_reporte_topo_chico_bebidasmundiales'"+fechaInicioFormateada+"','"+fechaFinFormateada+"','2327'");
+    pool.close();
     return res.recordset;
   }
   catch(error){ 
@@ -137,19 +127,8 @@ async function getdata_BebidasMundiales(){
 async function getdata_TopoChico(){
   try{
     let pool =await sql.connect(config);
-    let res = await pool.request().query("SELECT T.TRAREFERENCIA 'REFERENCIA', CONVERT(varchar,R.FECHA_CREACION,103) 'FECHAAPERTURAPEDIMENTO',"+
-    "'COMPAÑIA TOPO CHICO S DE RL DE CV' 'CLIENTE', P.PRONOM 'PROVEEDOR', F.FACGNOFAC 'FACTURA',"+
-    "F.FOLIO_CFDI 'CFDI', CONVERT(varchar,F.FACGFEFAC,103) 'FECHAFACTURA','EXPORTACION' 'TIPOOPERACION',"+
-    "CONVERT(varchar,T.TRAFECHACRUCE,103) 'FECHACRUCE', '' 'c001caat', T.TRANUMCAJA 'CAJA', R.VEHICULO 'PLACAS', T.TRAPEDIMENTO 'PEDIMENTO' FROM"+
-    " TRAFICO T INNER JOIN TBLBOD B ON T.TRAREFERENCIA = B.BODREFERENCIA AND T.PREF = B.PREF"+
-    " INNER JOIN TBLFACTGEN F ON T.TRAREFERENCIA = F.FACGREF AND T.TRACLI = F.FACGCLI"+
-    " INNER JOIN REMESAS_GEN R ON T.TRAREFERENCIA = R.REFERENCIA AND T.PREF = R.PREF"+
-    " INNER JOIN REMESAS_DET RD ON R.ID_REMESA = RD.ID_REMESA AND F.FACGNOFAC = RD.NUMERO_FACTURA"+
-    " INNER JOIN PROCLI P ON T.TRAPROCLI = P.PROVEEDOR_ID"+
-    " WHERE TRACLI = '1378' AND T.TRAIMPEXP = '0' AND R.FECHA_CREACION BETWEEN '" +fechaInicioFormateada+ "' AND '"+ fechaFinFormateada+
-    "' GROUP BY T.TRAREFERENCIA, R.FECHA_CREACION, P.PRONOM, F.FACGNOFAC, F.FACGFEFAC,"+
-    " T.TRAFECHACRUCE, T.TRANUMCAJA, T.TRAPEDIMENTO, T.TRAPLACAS, F.FOLIO_CFDI, R.VEHICULO"+
-    " ORDER BY R.FECHA_CREACION");
+    let res = await pool.request().query("exec sp_reporte_topo_chico_bebidasmundiales'"+fechaInicioFormateada+"','"+fechaFinFormateada+"','1378'");
+    pool.close();
     return res.recordset;
   }
   catch(error){ 
@@ -163,6 +142,7 @@ async function getdata_SemaforoEjecutivos(){
   try{
     let pool =await sql.connect(config);
     let res = await pool.request().query("execute sp_correos_semaforo");
+    
     return res.recordset;
   }
   catch(error){ 
@@ -173,6 +153,18 @@ async function getdata_SemaforoReporte(ejecutivoid){
   try{
     let pool =await sql.connect(config);
     let res = await pool.request().query("execute sp_reportes_semaforo '"+ejecutivoid+"'");
+    
+    return res.recordset;
+  }
+  catch(error){ 
+    console.log("Error de get "+error);
+  }
+}
+async function sp_informacion_cumpleanios(){
+  try{
+    let pool =await sql.connect(config);
+    let res = await pool.request().query("execute sp_informacion_cumpleanios");
+    
     return res.recordset;
   }
   catch(error){ 
@@ -314,7 +306,8 @@ async function getdata_mercanciasenbodega(cliente_id){
 async function getdata_correos_ejecutivos_cliente(cliente_id){
   try{
     let pool =await sql.connect(config);
-    let res = await pool.request().query("execute aduana.dbo.sp_correos_ejecutivos_cliente"+" '"+cliente_id+"'")
+    let res = await pool.request().query("execute sp_correos_ejecutivos_cliente"+" '"+cliente_id+"'")
+
     return res.recordset;
   }
   catch(error){ 
@@ -324,19 +317,21 @@ async function getdata_correos_ejecutivos_cliente(cliente_id){
 async function getdata_listaclientes(){
   try{
     let pool =await sql.connect(config);
-    let res = await pool.request().query("Select distinct cliente_id,clientes.NUMERO as numero,Nom as nomcli From tblBod left join trafico on trareferencia = bodreferencia and tracli = bodcli LEFT JOIN TBLFLET ON TBLFLET.FLECLAVE = TBLBOD.BODFLE left join procli on proveedor_id = bodprocli left join clientes on bodcli = CLIENTE_ID where (traregimen <> 'F4' or traregimen IS NULL) and traImpExp = '1' and BODVIRTUAL <> 1 and tblBod.PREF = 'T3485240' and bodfecha >= '2006-01-01' and Trafico.traFechaCruce IS NULL and cliente_id<>'2316' order by Nom asc");
+    let res = await pool.request().query("Select distinct cliente_id,clientes.NUMERO as numero,Nom as nomcli From tblBod left join trafico on trareferencia = bodreferencia and tracli = bodcli LEFT JOIN TBLFLET ON TBLFLET.FLECLAVE = TBLBOD.BODFLE left join procli on proveedor_id = bodprocli left join clientes on bodcli = CLIENTE_ID where (traregimen <> 'F4' or traregimen IS NULL) and traImpExp = '1' and BODVIRTUAL <> 1 and tblBod.PREF = 'T3485240' and bodfecha >= '2006-01-01' and Trafico.traFechaCruce IS NULL and cliente_id <> '2316' order by Nom asc");
+    pool.close();
     return res.recordset;
   }
   catch(error){ 
     console.log("Error de get "+error);
   }
 }
-/******************************************/
+/******************************************/ 
 /******************************************/
 async function getdata_ReporteASN(){
   try{
     let pool =await sql.connect(config);
     let res = await pool.request().query("execute sp_reporte_ASN");
+    pool.close();
     return res.recordset;
   }
   catch(error){ 
@@ -348,7 +343,8 @@ async function getdata_ReporteASN(){
 async function getdata_Thyssenkrupp_pendientes(fechaini, fechafin){
   try{
     let pool =await sql.connect(config);
-    let res = await pool.request().query("execute aduana.dbo.sp_ReporteThyssenhrup_pendientes '" +fechaini+"','"+fechafin+"'");
+    let res = await pool.request().query("execute sp_ReporteThyssenhrup_pendientes '" +fechaini+"','"+fechafin+"'");
+    pool.close();
     return res.recordset;
   }
   catch(error){ 
@@ -360,11 +356,349 @@ async function getdata_Thyssenkrupp_pendientes(fechaini, fechafin){
 async function getdata_correos_reporte(tiporeporte){
   try{
     let pool =await sql.connect(config);
-    let res = await pool.request().query("execute aduana.dbo.sp_correos_reporte"+" '"+tiporeporte+"'")
+    //let res = await pool.request().query("SELECT 1 AS Test")
+    let res = await pool.request().query("execute sp_correos_reporte"+" '"+tiporeporte+"'")
+    pool.close();
     return res.recordset;
   }
   catch(error){ 
     console.log("Error de get "+error);
+  }
+}
+/******************************************/
+/******************************************/
+async function getdata_reporte_kawassaki(){
+  try{
+    let pool =await sql.connect(config);
+    let res = await pool.request().query("execute sp_reportekawassaki")
+    pool.close();
+    return res.recordset;
+  }
+  catch(error){ 
+    console.log("Error de get "+error);
+  }
+}
+
+
+async function getdata_hb101(){
+  try{
+    let pool =await sql.connect(config);
+    let res = await pool.request().query("execute sp_hb101")
+    pool.close();
+    return res.recordset;
+  }
+  catch(error){ 
+    console.log("Error de get "+error);
+  }
+}
+async function getdata_hb102(){
+  try{
+    let pool =await sql.connect(config);
+    let res = await pool.request().query("execute sp_hb102")
+    pool.close();
+    return res.recordset;
+  }
+  catch(error){ 
+    console.log("Error de get "+error);
+  }
+}
+async function getdata_hb101(){
+  try{
+    let pool =await sql.connect(config);
+    let res = await pool.request().query("execute sp_hb101")
+    pool.close();
+    return res.recordset;
+  }
+  catch(error){ 
+    console.log("Error de get "+error);
+  }
+}
+async function getdata_hb102(){
+  try{
+    let pool =await sql.connect(config);
+    let res = await pool.request().query("execute sp_hb102")
+    pool.close();
+    return res.recordset;
+  }
+  catch(error){ 
+    console.log("Error de get "+error);
+  }
+}
+async function getdata_hb103(){
+  try{
+    let pool =await sql.connect(config);
+    let res = await pool.request().query("execute sp_hb103")
+    pool.close();
+    return res.recordset;
+  }
+  catch(error){ 
+    console.log("Error de get "+error);
+  }
+}
+async function revisarasnexisten (referencia)  {
+  try {
+    // Establecer la conexión
+    let respuesta
+    let pool =await sql.connect(config);
+    let result = await pool.request().query("sp_revisar_ASN_existen "+"'"+referencia+"'");
+    // Verificar si el conjunto de resultados es null o tiene longitud cero
+    if (!result.recordset || result.recordset.length === 0) {
+      //console.log('No se encontraron resultados.');
+      respuesta=""
+      pool.close();
+      return respuesta;
+    }
+    else{
+      pool.close();
+      return result.recordset;
+    }
+    
+
+  } catch (error) {
+    console.error('Error al conectar o consultar la base de datos:', error.message);
+  } 
+};
+async function ejecutar_sp_Asn  (referencia)  {
+  try {
+    // Establecer la conexión
+    let respuesta
+    let pool =await sql.connect(config);
+    let result = await pool.request().query("sp_ejecutar_sp_Asn "+"'"+referencia+"'");
+    // Verificar si el conjunto de resultados es null o tiene longitud cero
+    if (!result.recordset || result.recordset.length === 0) {
+      //console.log('No se encontraron resultados.');
+      respuesta=""
+      pool.close();
+      return respuesta;
+    }
+    else{
+      pool.close();
+      return result.recordset;
+    }
+    
+
+  } catch (error) {
+    console.error('Error al conectar o consultar la base de datos:', error.message);
+  } 
+};
+
+async function facturasaenviar ()  {
+  try {
+    // Establecer la conexión
+    let respuesta
+    let pool =await sql.connect(config);
+    let result = await pool.request().query("sp_selectBitacoraFacturasCorreo");
+    // Verificar si el conjunto de resultados es null o tiene longitud cero
+    if (!result.recordset || result.recordset.length === 0) {
+      //console.log('No se encontraron resultados.');
+      respuesta=""
+      pool.close();
+      return respuesta;
+    }
+    else{
+      pool.close();
+      return result.recordset;
+    }
+    
+
+  } catch (error) {
+    console.error('Error al conectar o consultar la base de datos:', error.message);
+  } 
+};
+async function actualizarestadofactura (referencia)  {
+  try {
+    // Establecer la conexión
+    let respuesta
+    let pool =await sql.connect(config);
+    let result = await pool.request().query("sp_actualizar_estado_factura "+"'"+referencia+"'");
+    // Verificar si el conjunto de resultados es null o tiene longitud cero
+    if (!result.recordset || result.recordset.length === 0) {
+      //console.log('No se encontraron resultados.');
+      respuesta=""
+      pool.close();
+      return respuesta;
+    }
+    else{
+      pool.close();
+      return result.recordset;
+    }
+    
+
+  } catch (error) {
+    console.error('Error al conectar o consultar la base de datos:', error.message);
+  } 
+};
+async function FRACCIONTBLPARTESVS101ESTANENBODEGAIMPORTACION(){
+  try{
+    let pool =await sql.connect(config);
+    let res = await pool.request().query("execute FRACCIONTBLPARTESVS101ESTANENBODEGAIMPORTACION")
+    pool.close();
+    return res.recordset;
+  }
+  catch(error){ 
+    console.log("Error de get "+error);
+  }
+}
+async function FRACCIONTBLPARTESVS101ESTANENBODEGAEXPORTACION(){
+  try{
+    let pool =await sql.connect(config);
+    let res = await pool.request().query("execute FRACCIONTBLPARTESVS101ESTANENBODEGAEXPORTACION")
+    pool.close();
+    return res.recordset;
+  }
+  catch(error){ 
+    console.log("Error de get "+error);
+  }
+}
+async function sp_AVISO_AUTOMATICO_HB201_SIN_EDI(){
+  try{
+    let pool =await sql.connect(config);
+    let res = await pool.request().query("execute sp_AVISO_AUTOMATICO_HB201_SIN_EDI")
+    pool.close();
+    return res.recordset;
+  }
+  catch(error){ 
+    console.log("Error de get "+error);
+  }
+}
+async function Sp_kfantasma(){
+  try{
+    let pool =await sql.connect(config);
+    let res = await pool.request().query("execute Sp_kfantasma")
+    pool.close();
+    return res.recordset;
+  }
+  catch(error){ 
+    console.log("Error de get "+error);
+  }
+}
+async function sp_ObtenerInformacionPedimento(ClienteId,ImpExp,Pedimento,renglon) {
+  try {
+    let pool = await sql.connect(config);
+
+    let resultado = await pool.request()
+      .input('ClienteId', sql.Int, ClienteId)
+      .input('ImpExp', sql.Int, ImpExp)
+      .input('Pedimento', sql.VarChar(8), Pedimento)
+      .input('Partida', sql.Int, renglon)
+      .execute('aduana.dbo.sp_ObtenerInformacionPedimento'); 
+
+    return resultado.recordset;
+  } catch (error) {
+    console.error('Error al conectar o consultar la base de datos:', error.message);
+    throw error; 
+  } finally {
+    sql.close(); // Cierra la conexión
+  }
+}
+async function sp_ObtenerPedimentos(ClienteId) {
+  try {
+    let pool = await sql.connect(config);
+
+    let resultado = await pool.request()
+      .input('ClienteId', sql.Int, ClienteId)
+      .execute('aduana.dbo.sp_ObtenerPedimentos'); 
+
+    return resultado.recordset;
+  } catch (error) {
+    console.error('Error al conectar o consultar la base de datos:', error.message);
+    throw error; 
+  } finally {
+    sql.close(); // Cierra la conexión
+  }
+}
+async function sp_ObtenerPedimentos_Semanal(ClienteId) {
+  try {
+    let pool = await sql.connect(config);
+
+    let resultado = await pool.request()
+      .input('ClienteId', sql.Int, ClienteId)
+      .execute('aduana.dbo.sp_ObtenerPedimentos_Semanal'); 
+
+    return resultado.recordset;
+  } catch (error) {
+    console.error('Error al conectar o consultar la base de datos:', error.message);
+    throw error; 
+  } finally {
+    sql.close(); // Cierra la conexión
+  }
+}
+async function sp_totaldeclientesrevisarfraccionesIMMEX() {
+  try {
+    let pool = await sql.connect(config);
+
+    let resultado = await pool.request()
+      .execute('aduana.dbo.sp_totaldeclientesrevisarfraccionesIMMEX'); 
+
+    return resultado.recordset;
+  } catch (error) {
+    console.error('Error al conectar o consultar la base de datos:', error.message);
+    throw error; 
+  } finally {
+    sql.close(); // Cierra la conexión
+  }
+}
+async function sp_obtenerfraccionesIMMEXnoautorizadas(Clientenumero) {
+  try {
+    let pool = await sql.connect(config);
+
+    let resultado = await pool.request()
+      .input('Clientenumero', sql.Int, Clientenumero)
+      .execute('aduana.dbo.sp_obtenerfraccionesIMMEXnoautorizadas'); 
+
+    return resultado.recordset;
+  } catch (error) {
+    console.error('Error al conectar o consultar la base de datos:', error.message);
+    throw error; 
+  } finally {
+    sql.close(); // Cierra la conexión
+  }
+}
+async function sp_obtenerejecutivogerentesubcliente(numero) {
+  try {
+    let pool = await sql.connect(config);
+
+    let resultado = await pool.request()
+      .input('numero', sql.VarChar(5), numero)
+      .execute('aduana.dbo.sp_obtenerejecutivogerentesubcliente'); 
+
+    return resultado.recordset;
+  } catch (error) {
+    console.error('Error al conectar o consultar la base de datos:', error.message);
+    throw error; 
+  } finally {
+    sql.close(); // Cierra la conexión
+  }
+}
+async function sp_obtenerclientesreporteanexo24() {
+  try {
+    let pool = await sql.connect(config);
+
+    let resultado = await pool.request()
+      .execute('aduana.dbo.sp_obtenerclientesreporteanexo24'); 
+
+    return resultado.recordset;
+  } catch (error) {
+    console.error('Error al conectar o consultar la base de datos:', error.message);
+    throw error; 
+  } finally {
+    sql.close(); // Cierra la conexión
+  }
+}
+async function sp_correos_ejecutivos_cliente_anexo24(cliente) {
+  try {
+    let pool = await sql.connect(config);
+
+    let resultado = await pool.request()
+      .input('cliente', sql.VarChar(5),cliente)
+      .execute('aduana.dbo.sp_correos_ejecutivos_cliente_anexo24'); 
+
+    return resultado.recordset;
+  } catch (error) {
+    console.error('Error al conectar o consultar la base de datos:', error.message);
+    throw error; 
+  } finally {
+    sql.close(); // Cierra la conexión
   }
 }
 /******************************************/
@@ -388,4 +722,25 @@ module.exports={
   getdata_ReporteASN:getdata_ReporteASN,
   getdata_Thyssenkrupp_pendientes,getdata_Thyssenkrupp_pendientes,
   getdata_correos_reporte:getdata_correos_reporte,
+  getdata_reporte_kawassaki:getdata_reporte_kawassaki,
+  getdata_hb101:getdata_hb101,
+  getdata_hb102:getdata_hb102,
+  getdata_hb103:getdata_hb103,
+  revisarasnexisten:revisarasnexisten,
+  ejecutar_sp_Asn:ejecutar_sp_Asn,
+  facturasaenviar:facturasaenviar,
+  actualizarestadofactura:actualizarestadofactura,
+  FRACCIONTBLPARTESVS101ESTANENBODEGAIMPORTACION:FRACCIONTBLPARTESVS101ESTANENBODEGAIMPORTACION,
+  FRACCIONTBLPARTESVS101ESTANENBODEGAEXPORTACION:FRACCIONTBLPARTESVS101ESTANENBODEGAEXPORTACION,
+  sp_AVISO_AUTOMATICO_HB201_SIN_EDI:sp_AVISO_AUTOMATICO_HB201_SIN_EDI,
+  Sp_kfantasma:Sp_kfantasma,
+  sp_ObtenerInformacionPedimento:sp_ObtenerInformacionPedimento,
+  sp_ObtenerPedimentos:sp_ObtenerPedimentos,
+  sp_informacion_cumpleanios:sp_informacion_cumpleanios,
+  sp_totaldeclientesrevisarfraccionesIMMEX:sp_totaldeclientesrevisarfraccionesIMMEX,
+  sp_obtenerfraccionesIMMEXnoautorizadas:sp_obtenerfraccionesIMMEXnoautorizadas,
+  sp_obtenerejecutivogerentesubcliente:sp_obtenerejecutivogerentesubcliente,
+  sp_ObtenerPedimentos_Semanal:sp_ObtenerPedimentos_Semanal,
+  sp_obtenerclientesreporteanexo24:sp_obtenerclientesreporteanexo24,
+  sp_correos_ejecutivos_cliente_anexo24:sp_correos_ejecutivos_cliente_anexo24
 }

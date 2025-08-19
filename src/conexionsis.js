@@ -2,17 +2,17 @@ const sql=require('mssql');
 const dotenv=require('dotenv');
 dotenv.config();
 const config={ 
-    server: process.env.server,
+    server: process.env.serveraduana,
     authentication:{
         type: 'default',
         options:{
             userName: process.env.user, 
-            password: process.env.password
+            password: process.env.passwordaduana
         }
     },
     options:{
-        port:1433,
-        database: process.env.databasesis,
+        port:23390,
+        database: process.env.database,
         trustServerCertificate: true,
     }
 }
@@ -26,8 +26,37 @@ async function conexionsis(){
 
   }
 } 
+async function facturakmx_inventario(esmensual) {
+  try {
+      // Establecer la conexión
+      let respuesta;
+      let pool = await sql.connect(config);
+      let request = pool.request();
+      request.input('esmensual', sql.NVarChar(255), esmensual);
+
+      let result = await request.execute('aduana.dbo.sp_FACTURAS_KMX_inventario');
+
+      // Verificar si el conjunto de resultados es null o tiene longitud cero
+      if (!result.recordset || result.recordset.length === 0) {
+          //console.log('No se encontraron resultados.');
+          respuesta = "";
+          pool.close();
+          return respuesta;
+      } else {
+        pool.close();
+          return result.recordset;
+      }
+  } catch (error) {
+      console.error('Error al conectar o consultar la base de datos:', error.message);
+  } finally {
+      // Cerrar la conexión
+      await sql.close();
+  }
+};
 
 module.exports={
     conexionsis:conexionsis,
+    facturakmx_inventario:facturakmx_inventario,
+
    
   }
