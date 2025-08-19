@@ -35,10 +35,8 @@ const server = http.createServer(app);
 // const io = socketIO(server); // (si lo vas a usar)
 
 // ===== Config =====
-const PORT = process.env.PORT || 3000;
-const CORS_ORIGINS = (process.env.CORS_ORIGINS || 'https://tu-dominio.com')
-  .split(',')
-  .map(s => s.trim());
+const PORT = process.env.PORT || 3001;
+
 
 // ===== Seguridad / transporte base =====
 app.set('trust proxy', 1);
