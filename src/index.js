@@ -8877,7 +8877,7 @@ const LoginSchema = z.object({
   usuario: z.string().min(1, 'usuario requerido'),
   password: z.string().min(1, 'password requerida')
 });
-
+//Se quita el api de login en la ruta para que no se pueda acceder desde fuera
 app.post('/auth/login', loginLimiter, async (req, res) => {
   try {
     // ✅ POST: usa body, no query
