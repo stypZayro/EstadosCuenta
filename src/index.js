@@ -9834,7 +9834,7 @@ function compressFile(inputFilePaths, outputZipPath) {
 ///---------------------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------------------
-app.get('/api/descargarfacturaskmx', async (req, res) => {
+app.get('/descargarfacturaskmx', async (req, res) => {
   const comandoLeerMail = 'python leermailfacturaskmx.py';
   let bandera=false;
   exec(comandoLeerMail, (error, stdout, stderr) => {
