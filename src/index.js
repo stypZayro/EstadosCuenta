@@ -1221,8 +1221,7 @@ app.get('/api/getdata_reportemercanciasenbodega',function(req,res,next){
                }))
                //console.log(correoscliente,correosclientecc)
                //Despues de guardar tiene que mandar el correo
-               setTimeout(()=>{enviarMailreportebodega(correoscliente,correosclientecc,nombreArchivo,renglonactual.nomcli,renglonactual.numero,config)
-               },3000);
+               setTimeout(()=>{enviarMailreportebodega(correoscliente,correosclientecc,nombreArchivo,renglonactual.nomcli,renglonactual.numero,config)},3000);
             }); 
             
             
@@ -4953,7 +4952,7 @@ app.get('/api/getdata_estadosdecuentanld', async function(req, res, next) {
 
          const correos=await sqlzam.contactosestadoscuenta(cliente.ClienteID);
          correos.forEach(async co=>{
-            //await enviarMailNLD(nombreArchivo,transport,co.correos,nombreLimpio)
+            await enviarMailNLD(nombreArchivo,transport,co.correos,nombreLimpio)
          })
          //
          console.log('Archivo creado exitosamente.');
@@ -7683,7 +7682,7 @@ app.get('/api/getdata_cumpleanios', async function(req, res, next) {
       let transport = nodemailer.createTransport(config); 
       let datoscumple=await sql.sp_informacion_cumpleanios()  
       datoscumple.forEach(async item=>{
-         await enviarMailPORTALCUMPLE(transport,item.us_NombreCompleto);
+         //await enviarMailPORTALCUMPLE(transport,item.us_NombreCompleto);
       })
       res.status(200).send(true);
        
@@ -9849,6 +9848,7 @@ app.get('/api/descargarfacturaskmx', async (req, res) => {
 
     //const carpeta = './FacturasKMX';
     const carpeta = path.resolve(__dirname, '..', 'FacturasKMX'); // raíz del proyecto
+    console.log(`Carpeta: ${carpeta}`);
    if (!fs.existsSync(carpeta)) fs.mkdirSync(carpeta, { recursive: true });
     fs.readdir(carpeta, async (error, archivos) => {
       if (error) {
@@ -9925,8 +9925,8 @@ app.get('/api/descargarfacturaskmx', async (req, res) => {
               //res.json(resultados)
               //console.log(resultados)
               //console.log(valorN4PrimerResultado +'usuario '+user+'resultados '+resultados)
-              const respuesta = await sqlSISTEMAS.facturakmx(valorN4PrimerResultado,'sitemas@zayro.com',resultados);
-              console.log(respuesta)
+              const respuesta = await sql.facturakmx(valorN4PrimerResultado,'sitemas@zayro.com',resultados);
+              //res.json(respuesta)
               //const ws  = workbook.addWorksheet(valorN4PrimerResultado);
               
               //const wb = new ExcelJS.Workbook();
