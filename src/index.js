@@ -9847,7 +9847,9 @@ app.get('/api/descargarfacturaskmx', async (req, res) => {
       return res.status(500).json({ error: 'Error en la salida estándar de leermail' });
     }
 
-    const carpeta = './FacturasKMX';
+    //const carpeta = './FacturasKMX';
+    const carpeta = path.resolve(__dirname, '..', 'FacturasKMX'); // raíz del proyecto
+   if (!fs.existsSync(carpeta)) fs.mkdirSync(carpeta, { recursive: true });
     fs.readdir(carpeta, async (error, archivos) => {
       if (error) {
         console.error(`Error al leer la carpeta: ${error}`);
@@ -10112,17 +10114,12 @@ app.get('/api/descargarfacturaskmx', async (req, res) => {
           
               /********************************************************************* */
               //const excelFilePath = path.join(__dirname, `${valorN4PrimerResultado}_Invoice.xlsx`);
-              const excelFilePath = path.join(__dirname, 'facturaskmx', `${valorN4PrimerResultado}_Invoice.xlsx`);
-              await workbook.xlsx.writeFile(excelFilePath);
-              fs.access(excelFilePath, fs.constants.F_OK, async (err) => {
-                if (err) {
-                  console.error('Archivo no encontrado:', err);
-                } else {
-                  await sqlram.actualizarfactura(archivo)
-                  bandera=true;
-                  console.log('Archivo guardado correctamente y disponible en la ruta especificada.');
-                }
-              });
+              const excelFilePath = path.join(carpeta, `${valorN4PrimerResultado}_Invoice.xlsx`);
+               await workbook.xlsx.writeFile(excelFilePath);
+               await fs.promises.access(excelFilePath);         // confirma que existe
+               await sqlram.actualizarfactura(archivo);
+               bandera = true;
+               console.log('Archivo guardado correctamente en:', excelFilePath);
           
           
           
@@ -10148,7 +10145,8 @@ app.get('/api/descargarfacturaskmx', async (req, res) => {
       }
       //console.log(bandera)
       if (bandera==true){
-        enviarMailFacturasKMX('Sistemas@zayro,com',carpeta)
+        await enviarMailFacturasKMX('Sistemas@zayro,com',carpeta)
+
         return res.status(200).json({ message: 'Proceso de correo completado exitosamente' });
       }
       else{
@@ -10161,66 +10159,68 @@ app.get('/api/descargarfacturaskmx', async (req, res) => {
   });
 });
 const enviarMailFacturasKMX = async (correos, carpeta) => {
-    const config = {
-        host: process.env.hostemail,
-        port: process.env.portemail,
-        secure: true,
-        auth: {
-            user: process.env.useremail,
-            pass: process.env.passemail
-        },
-        tls: {
-            rejectUnauthorized: false,
-        },
-    };
+  const port = parseInt(process.env.portemail, 10) || 465;
+  const transport = nodemailer.createTransport({
+    host: process.env.hostemail,
+    port,
+    secure: port === 465, // 465 = SSL; otros puertos = STARTTLS
+    auth: {
+      user: process.env.useremail,
+      pass: process.env.passemail
+    },
+    tls: { rejectUnauthorized: false },
+  });
 
-    const today = new Date();
-    const fecha = today.toISOString().split('T')[0]; // Formato YYYY-MM-DD
-    const zipFilePath = path.join(__dirname, `facturas_${fecha}.zip`);
+  try {
+    // Asegura que la carpeta exista
+    const baseDir = path.resolve(carpeta || path.resolve(__dirname, '..', 'FacturasKMX'));
+    await fs.promises.mkdir(baseDir, { recursive: true });
 
-    // Comprimir la carpeta
-    await compressFolder(path.join(__dirname, 'facturaskmx'), zipFilePath);
+    // Verifica que haya archivos .xlsx para enviar
+    const files = await fs.promises.readdir(baseDir);
+    const xlsxFiles = files.filter(f => f.toLowerCase().endsWith('.xlsx'));
+    if (xlsxFiles.length === 0) {
+      console.warn('[KMX] No hay archivos .xlsx en:', baseDir);
+      return { ok: false, message: 'No hay facturas para enviar' };
+    }
+
+    // Fecha y ruta del ZIP (fuera de la carpeta comprimida)
+    const fecha = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const zipFilePath = path.join(path.dirname(baseDir), `facturas_${fecha}.zip`);
+
+    // Comprimir la carpeta baseDir -> zipFilePath
+    await compressFolder(baseDir, zipFilePath);
+
+
+    
 
     const mensaje = {
-        from: 'sistemas@zayro.com',
-        to: 'sistemas@zayro.com',
-        //to: 'programacion@zayro.com', // Convertir la lista de correos en una cadena
-        subject: `FACTURAS KMX_${fecha}`,
-        attachments: [
-            {
-                filename: `facturas_${fecha}.zip`, // Usar el nombre del archivo comprimido
-                path: zipFilePath,
-            },
-        ],
-        text: 'FACTURAS KMX GENERADAS AUTOMATICAS',
+      from: 'sistemas@zayro.com',
+      to: 'sistemas@zayro.com',
+      subject: `FACTURAS KMX_${fecha}`,
+      text: 'FACTURAS KMX GENERADAS AUTOMÁTICAMENTE',
+      attachments: [
+        { filename: path.basename(zipFilePath), path: zipFilePath }
+      ],
     };
 
-    const transport = nodemailer.createTransport(config);
-    transport.verify().then(() => console.log("Configuración de correo verificada."))
-        .catch((error) => console.log(error));
+    await transport.verify();
+    const info = await transport.sendMail(mensaje);
+    console.log('Correo enviado:', info.messageId);
 
-    transport.sendMail(mensaje, async (error, info) => {
-        if (error) {
-            console.error('Error al enviar el correo:', error);
-        } else {
-            console.log('Correo enviado:', info.response);
-            
-            // Limpiar la carpeta
-            await limpiarCarpeta(path.join(__dirname, 'facturaskmx'));
-            // Eliminar el archivo comprimido
-            fs.unlink(zipFilePath, (err) => {
-                if (err) {
-                    console.error(`Error al eliminar el archivo comprimido: ${err}`);
-                } else {
-                    console.log(`Archivo comprimido eliminado: ${zipFilePath}`);
-                }
-            });
-        }
+    // Limpieza: borra contenido de la carpeta y luego el ZIP
+    await limpiarCarpeta(baseDir);
+    await fs.promises.unlink(zipFilePath);
 
-        // Cierra el transporte después de enviar el correo
-        transport.close();
-    });
+    return { ok: true, message: 'Correo enviado y limpieza realizada' };
+  } catch (error) {
+    console.error('Error al enviar facturas KMX:', error);
+    throw error;
+  } finally {
+    transport.close();
+  }
 };
+
 
 function compressFolder(inputFolderPath, outputZipPath) {
     return new Promise((resolve, reject) => {
