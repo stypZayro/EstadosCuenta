@@ -9923,7 +9923,7 @@ app.get('/api/descargarfacturaskmx', async (req, res) => {
               //res.json(resultados)
               //console.log(resultados)
               //console.log(valorN4PrimerResultado +'usuario '+user+'resultados '+resultados)
-              const respuesta = await sqlSIS.facturakmx(valorN4PrimerResultado,'sitemas@zayro.com',resultados);
+              const respuesta = await sqlSISTEMAS.facturakmx(valorN4PrimerResultado,'sitemas@zayro.com',resultados);
               console.log(respuesta)
               //const ws  = workbook.addWorksheet(valorN4PrimerResultado);
               
@@ -10107,7 +10107,7 @@ app.get('/api/descargarfacturaskmx', async (req, res) => {
                 }
               });
               //res.json(impAttData);
-              await sqlSIS.guardafacturakmx(valorN4PrimerResultado,impAttData)
+              await sqlSISTEMAS.guardafacturakmx(valorN4PrimerResultado,impAttData)
               
           
               /********************************************************************* */
