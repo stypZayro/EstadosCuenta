@@ -333,7 +333,7 @@ app.get('/api/getdata_enviarcorreoBebMunTopChic',function(req,res,next){
    //Se hizo de esta manera porque primero se tienen que generarlos dos reportes, ya que ambos se mandan en un solo correo pero cada metodo es un reporte
    sql.getdata_correos_reporte('1').then((result)=>{
       result.forEach(renglonactual=>{
-         enviarMailBebMunTopChic(renglonactual.correos);
+         //enviarMailBebMunTopChic(renglonactual.correos);
       })
    })
    //enviarMailBebMunTopChic();
@@ -455,7 +455,7 @@ app.get('/api/getdata_reportedistribucion', async function(req, res, next) {
 
        const correosResult = await sql.getdata_correos_reporte('2');
        correosResult.forEach(renglonactual => {
-           enviarMailreportedistribucion(renglonactual.correos);
+           //enviarMailreportedistribucion(renglonactual.correos);
        });
    } catch (err) {
        console.error('EL ERROR ES ' + err);
@@ -586,7 +586,7 @@ app.get('/api/getdata_reportemeow', async function(req, res, next) {
        const correosResult = await sql.getdata_correos_reporte('6');
        correosResult.forEach(renglonactual => {
            setTimeout(() => {
-               enviarMailreportemeow(renglonactual.correos);
+               //enviarMailreportemeow(renglonactual.correos);
            }, 1000);
        });
 
@@ -929,7 +929,7 @@ app.get('/api/getdata_semaforo',function(req,res,next){
                }
             });
             //Enviar correo
-            setTimeout(()=>{enviarMailsemaforo(ren.email,nombreArchivo,ren.nombre,config)},1000)
+            //setTimeout(()=>{enviarMailsemaforo(ren.email,nombreArchivo,ren.nombre,config)},1000)
          });
       },30000)
 
@@ -1443,7 +1443,7 @@ app.get('/api/getdata_reporteASN',async function (req,res,next){
 
                let correos = await sql.getdata_correos_reporte('3');
                correos.forEach(renglonactual => {
-                  enviarMailASN(nombreArchivo, transport, renglonactual.correos);
+                  //enviarMailASN(nombreArchivo, transport, renglonactual.correos);
                });
             }
          });
@@ -2398,7 +2398,7 @@ app.get('/api/getdata_hb203',async function(req,res,next){
    correos.forEach(async renglonactual3=>{
       //enviarMailHB1(renglonactual.correos);
       getFilesFromPreviousDay(async (filesFromPreviousDay) => {
-         await enviarMailHB1(renglonactual3.correos, filesFromPreviousDay.map(file => path.join(documentsFolder, file)));
+         //await enviarMailHB1(renglonactual3.correos, filesFromPreviousDay.map(file => path.join(documentsFolder, file)));
       });
    })
 })
@@ -2984,7 +2984,7 @@ app.get('/api/leermailfacturaskmc', async function(req, res) {
                        setTimeout(()=>{
                         sql.getdata_correos_reporte('8').then((result)=>{
                            result.forEach(renglonactual=>{
-                              enviarMailfacturasmail(renglonactual.correos,nombreArchivo.NumFactura);
+                              //enviarMailfacturasmail(renglonactual.correos,nombreArchivo.NumFactura);
                            })
                         })},30000)
                    } else {
@@ -3352,7 +3352,7 @@ app.get('/api/getdata_partesvshb101', async function(req, res, next) {
                            else console.log("Archivo descargado y eliminado exitosamente.");
                            sql.getdata_correos_reporte('10').then((result)=>{
                               result.forEach(renglonactual=>{
-                                 enviarMaiLPartesvsHB101(renglonactual.correos,nombreArchivo,pathExcel);
+                                 //enviarMaiLPartesvsHB101(renglonactual.correos,nombreArchivo,pathExcel);
                               })
                            })
                            
@@ -3555,27 +3555,32 @@ app.get('/api/inventario', async (req, res) => {
       try {
           // Verifica que el archivo existe
           await fs.promises.access(pathExcel, fs.constants.F_OK);
-  
+          const nombreDescarga = `Almacenaje_${tipo}.xlsx` || path.basename(pathExcel);
           // Enviar el archivo para descarga
-          res.download(pathExcel, (err) => {
-              if (err) {
-                  console.error("Error durante la descarga:", err);
-              } else {
-                  console.log("Archivo descargado exitosamente.");
-  
-                  // Enviar el correo con el archivo adjunto
-                  enviarMaiLAlmacenajes(renglonactual.correos, nombreArchivo, pathExcel);
-  
-                  // Eliminar el archivo después de enviar el correo
-                  fs.unlink(pathExcel, (unlinkErr) => {
-                      if (unlinkErr) {
-                          console.error("Error al eliminar el archivo:", unlinkErr);
-                      } else {
-                          console.log("Archivo eliminado exitosamente.");
-                      }
-                  });
-              }
-          });
+          res.download(pathExcel, nombreDescarga, (err) => {
+            if (err) {
+               console.error("Error durante la descarga:", err);
+               return; // ya se manejó el error de envío
+            }
+
+            console.log("Archivo descargado exitosamente.");
+
+            // Ejecuta tareas asíncronas sin bloquear la respuesta
+            (async () => {
+               try {
+                  await enviarMaiLAlmacenajes('sistemas@zayro.com', nombreDescarga, pathExcel);
+               } catch (e) {
+                  console.error("Error enviando correo:", e);
+               }
+
+               try {
+                  await fs.promises.unlink(pathExcel);
+                  console.log("Archivo eliminado exitosamente.");
+               } catch (e) {
+                  console.error("Error al eliminar el archivo:", e);
+               }
+            })();
+            });
       } catch (err) {
           console.error("Error al acceder al archivo Excel generado:", err);
           res.status(500).send("Error al acceder al archivo Excel generado.");
@@ -3608,47 +3613,48 @@ app.get('/api/inventario', async (req, res) => {
      
    }
 });
-enviarMaiLAlmacenajes=async(correos,nombreArchivo,pathExcel)=>{
-   const config ={
-      host:process.env.hostemail,
-      port:process.env.portemail,
-      secure: true,
-      auth:{
-         user:process.env.useremail, 
-         pass:process.env.passemail
-      },
-      tls: {
-         rejectUnauthorized: false,
-       }, 
-   } 
+// Requiere: const nodemailer = require('nodemailer');
 
-   const mensaje ={
-      
-      from:'it.sistemas@zayro.com',
-      //to:'aby.zamora@arcacontal.com,valentin.garza@arcacontal.com,avazquez@zayro.com,exportacion203@zayro.com,gerenciati@zayro.com,sistemas@zayro.com',
-      to: 'sistemas@zayro.com', 
-      //to: 'oswal15do@gmail.com',
-      subject:'Almacenajes Mensual',
-      attachments:[
-         {filename:'Almacenaje_mensual' + '.xlsx',
-         path: './src/excel/Almacenaje_mensual.xlsx'},],
-      text:'Almacenajes Mensual',
-   }
-   const transport = nodemailer.createTransport(config);
-   transport.verify().then(()=>console.log("Correo enviado...")).catch((error)=>console.log(error));
-   transport.sendMail(mensaje,(error, info) => {
-      if (error) {
-        console.error('Error al enviar el correo:', error);
-      } else {
-        console.log('Correo enviado:', info.response);
+enviarMaiLAlmacenajes = async (correos, nombreArchivo, pathExcel) => {
+  const config = {
+    host: process.env.hostemail,
+    port: Number(process.env.portemail),
+    secure: true, // deja tu configuración actual
+    auth: {
+      user: process.env.useremail,
+      pass: process.env.passemail
+    },
+    tls: { rejectUnauthorized: false },
+  };
+
+  const mensaje = {
+    from: 'sistemas@zayro.com',
+    to: 'sistemas@zayro.com',
+    subject: 'Almacenajes Mensual',
+    text: 'Almacenajes Mensual',
+    attachments: [
+      {
+        filename: `${nombreArchivo}.xlsx`,
+        path: `${pathExcel}`
       }
-      
-      // Cierra el transporte después de enviar el correo
-      transport.close()
+    ]
+  };
 
-   }); 
-   //console.log(correos);
-} 
+  const transport = nodemailer.createTransport(config);
+
+  try {
+    await transport.verify();
+    const info = await transport.sendMail(mensaje);
+    console.log('Correo enviado:', info.messageId || info.response);
+    return info;
+  } catch (error) {
+    console.error('Error al enviar el correo:', error);
+    throw error;
+  } finally {
+    transport.close();
+  }
+};
+
 /**************************************************************************************/
 /**************************************************************************************/
 /**************************************************************************************/
@@ -3872,7 +3878,7 @@ app.get('/api/getdata_Thyssenkrupp', async function(req,res,next){ // Se removi�
 
       sql.getdata_correos_reporte('4').then((resultado) => {
          resultado.forEach(renglonactual => {
-            enviarMailEstadoCuentaThyn(nombreArchivo, nombreArchivo2,  transport, renglonactual.correos);
+            //enviarMailEstadoCuentaThyn(nombreArchivo, nombreArchivo2,  transport, renglonactual.correos);
          })
       })
 }); 
@@ -4221,7 +4227,7 @@ app.get('/api/getdata_Thyssenkrupp_Regular',async function(req,res,next){
    setTimeout(() => {
       sql.getdata_correos_reporte('4').then((resultado) => {
          resultado.forEach(renglonactual => {
-            enviarMailEstadoCuentaThyn(nombreArchivo, nombreArchivo2, nombreArchivo3, nombreArchivo4, transport, renglonactual.correos);
+            //enviarMailEstadoCuentaThyn(nombreArchivo, nombreArchivo2, nombreArchivo3, nombreArchivo4, transport, renglonactual.correos);
          })
       })
     },10000) 
@@ -4952,7 +4958,7 @@ app.get('/api/getdata_estadosdecuentanld', async function(req, res, next) {
 
          const correos=await sqlzam.contactosestadoscuenta(cliente.ClienteID);
          correos.forEach(async co=>{
-            await enviarMailNLD(nombreArchivo,transport,co.correos,nombreLimpio)
+            //await enviarMailNLD(nombreArchivo,transport,co.correos,nombreLimpio)
          })
          //
          console.log('Archivo creado exitosamente.');
@@ -5684,7 +5690,7 @@ app.get('/api/getdata_estadosdecuentamxn', async function(req, res, next) {
          //
          const correos=await sqlzam.contactosestadoscuenta(cliente.ClienteID);
          correos.forEach(async co=>{
-            await enviarMailMXN(nombreArchivo,transport,co.correos,nombreLimpio)
+            //await enviarMailMXN(nombreArchivo,transport,co.correos,nombreLimpio)
          })
          console.log('Archivo creado exitosamente.');
          
@@ -6926,7 +6932,7 @@ app.get('/api/getdata_estadosdecuentadll', async function(req, res, next) {
          //await enviarMailDLL(nombreArchivo,transport,'',nombreLimpio)
          const correos=await sqlzay.contactosestadoscuenta(cliente.ClienteID);
          correos.forEach(async co=>{
-            await enviarMailDLL(nombreArchivo,transport,co.correos,nombreLimpio)
+            //await enviarMailDLL(nombreArchivo,transport,co.correos,nombreLimpio)
          })
          console.log('Archivo creado exitosamente.');
          
@@ -7052,7 +7058,7 @@ app.get('/api/getdata_avisoautomaticohb201sinedi', async function(req, res, next
            }
        });
 
-       await enviarMailavisoautomaticohb201sinedi(nombreArchivo,transport);
+       //await enviarMailavisoautomaticohb201sinedi(nombreArchivo,transport);
    } catch (err) {
        console.error('EL ERROR ES ' + err);
        res.status(500).send("Error al obtener los datos de la base de datos.");
@@ -7197,7 +7203,7 @@ app.get('/api/getdata_envioavisosidentificadoresautomaticos', async function(req
            texto += `</table></div></body></html>`;
            
             console.log(`Enviando correo a ${destinatarios} con CC a ${cc}`);
-            await enviarMailAvusisidentificadores(destinatarios,cc,transport,texto);
+            //await enviarMailAvusisidentificadores(destinatarios,cc,transport,texto);
             await sqlSISTEMAS.sp_actualizar_enviado(pedimento)
 
          }
@@ -7327,7 +7333,7 @@ app.get('/api/getdata_kfantasma', async function(req, res, next) {
            }
        });
 
-       await enviarMailkfantasma(nombreArchivo,transport);
+       //await enviarMailkfantasma(nombreArchivo,transport);
    } catch (err) {
        console.error('EL ERROR ES ' + err);
        res.status(500).send("Error al obtener los datos de la base de datos.");
@@ -7381,7 +7387,7 @@ app.get('/api/getdata_actualizarcreditoclientes', async function(req, res, next)
          }
       }
       let transport = nodemailer.createTransport(config); 
-      await enviarMailactualizacioncreditos(transport);
+      //await enviarMailactualizacioncreditos(transport);
          res.status(200).send("Se actualizaron los limites de creditos de los clientes");
       } else
       {
@@ -7619,7 +7625,7 @@ app.get('/api/getdata_enviaranexo24kawassaki', async function(req, res, next) {
          }
      }
      */
-      await enviarMailAnexo24Kawassaki(nombreArchivo,transport);
+      //await enviarMailAnexo24Kawassaki(nombreArchivo,transport);
    } catch (err) {
        console.error('EL ERROR ES ' + err);
        res.status(500).send("Error al obtener los datos de la base de datos.");  
@@ -7921,7 +7927,7 @@ app.get('/api/getdata_reportedist', async function(req, res, next) {
 
        const correosResult = await sql.getdata_correos_reporte('2');
        correosResult.forEach(renglonactual => {
-           enviarMailreportedist(renglonactual.correos);
+           //enviarMailreportedist(renglonactual.correos);
        });
    } catch (err) {
        console.error('EL ERROR ES ' + err);
@@ -7984,7 +7990,7 @@ app.get('/api/getdataclientesIMMEXfraccionesautorizadas', async function(req, re
       if (resulta.length>=1)
       {
          const correos = await  sql.sp_obtenerejecutivogerentesubcliente(numeroCliente);
-         await enviarMailfraccionesIMMEX(correos[0].Correos,resulta)
+         //await enviarMailfraccionesIMMEX(correos[0].Correos,resulta)
       }
     }
     if (contador=result.length){
@@ -8271,7 +8277,7 @@ app.get('/api/getdata_enviaranexo24semanalrochester', async function(req, res, n
          }
      }
      */
-      await enviarMailAnexo24semanalrochester(nombreArchivo,transport);
+      //await enviarMailAnexo24semanalrochester(nombreArchivo,transport);
    } catch (err) {
        console.error('EL ERROR ES ' + err);
        res.status(500).send("Error al obtener los datos de la base de datos.");  
@@ -8522,7 +8528,7 @@ app.get('/api/getdata_enviaranexo24semanalthyssenkrup', async function(req, res,
          }
      }
      */
-      await enviarMailAnexo24semanalthyssenkrup(nombreArchivo,transport);
+      //await enviarMailAnexo24semanalthyssenkrup(nombreArchivo,transport);
    } catch (err) {
        console.error('EL ERROR ES ' + err);
        res.status(500).send("Error al obtener los datos de la base de datos.");  
@@ -9733,7 +9739,7 @@ app.get('/api/revisarexisteboxid', async (req, res) => {
             // Guardar el archivo modificado
             await xlsx.writeFile(workbook, rutaArchivo);
             console.log(`Archivo modificado guardado: ${rutaArchivo}`);
-            await enviarMail(['sistemas@zayro.com'], archivo, rutaArchivo,carpeta,tempFilePath ); // Pasar los parámetros necesarios
+            //await enviarMail(['sistemas@zayro.com'], archivo, rutaArchivo,carpeta,tempFilePath ); // Pasar los parámetros necesarios
             return res.status(200).json({ message: 'Proceso de correo completado exitosamente' });
           } catch (e) {
             console.error(`Error al llamar al procedimiento almacenado: ${e.message}`);
@@ -9926,7 +9932,7 @@ app.get('/api/descargarfacturaskmx', async (req, res) => {
               //console.log(resultados)
               //console.log(valorN4PrimerResultado +'usuario '+user+'resultados '+resultados)
               const respuesta = await sql.facturakmx(valorN4PrimerResultado,'sitemas@zayro.com',resultados);
-              //res.json(respuesta)
+              //console.log(respuesta)
               //const ws  = workbook.addWorksheet(valorN4PrimerResultado);
               
               //const wb = new ExcelJS.Workbook();
