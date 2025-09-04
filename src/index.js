@@ -4973,8 +4973,8 @@ app.get('/api/getdata_estadosdecuentanld', async function(req, res, next) {
 enviarMailNLD = async(nombreArchivo,transport, correos,nombreLimpio) => {
    const mensaje = {
       from:'sistemas@zayro.com',
-      to: 'cobranza@zayro.com;sistemas@zayro.com;'+correos,
-      //to: 'sistemas@zayro.com;',
+      //to: 'cobranza@zayro.com;sistemas@zayro.com;'+correos,
+      to: 'programacion@zayro.com;',
       subject: 'Estado de cuenta '+nombreLimpio,
       attachments: [
          {
@@ -5704,7 +5704,8 @@ app.get('/api/getdata_estadosdecuentamxn', async function(req, res, next) {
 enviarMailMXN = async(nombreArchivo,transport, correos,nombreLimpio) => {
    const mensaje = {
       from:'sistemas@zayro.com',
-      to: 'cobranza@zayro.com;sistemas@zayro.com;'+correos,
+      //to: 'cobranza@zayro.com;sistemas@zayro.com;'+correos,
+      to: 'programacion@zayro.com;',
       subject: 'Estado de cuenta Sucursal Aeropuerto '+nombreLimpio,
       attachments: [
          {
@@ -6947,7 +6948,8 @@ app.get('/api/getdata_estadosdecuentadll', async function(req, res, next) {
 enviarMailDLL= async(nombreArchivo,transport, correos,nombreLimpio) => {
    const mensaje = {
       from:'sistemas@zayro.com',
-      to: 'cobranza@zayro.com;sistemas@zayro.com;'+correos,
+      //to: 'cobranza@zayro.com;sistemas@zayro.com;'+correos,
+      to: 'programacion@zayro.com;',
       subject: 'Estado de cuenta '+nombreLimpio,
       attachments: [
          {
