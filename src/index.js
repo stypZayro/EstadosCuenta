@@ -5704,8 +5704,8 @@ app.get('/api/getdata_estadosdecuentamxn', async function(req, res, next) {
 enviarMailMXN = async(nombreArchivo,transport, correos,nombreLimpio) => {
    const mensaje = {
       from:'sistemas@zayro.com',
-      //to: 'cobranza@zayro.com;sistemas@zayro.com;'+correos,
-      to: 'programacion@zayro.com;',
+      to: 'cobranza@zayro.com;sistemas@zayro.com;'+correos,
+      //to: 'programacion@zayro.com;',
       subject: 'Estado de cuenta Sucursal Aeropuerto '+nombreLimpio,
       attachments: [
          {
