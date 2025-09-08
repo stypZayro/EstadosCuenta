@@ -4973,8 +4973,8 @@ app.get('/api/getdata_estadosdecuentanld', async function(req, res, next) {
 enviarMailNLD = async(nombreArchivo,transport, correos,nombreLimpio) => {
    const mensaje = {
       from:'sistemas@zayro.com',
-      //to: 'cobranza@zayro.com;sistemas@zayro.com;'+correos,
-      to: 'programacion@zayro.com;',
+      to: 'cobranza@zayro.com;sistemas@zayro.com;'+correos,
+      //to: 'programacion@zayro.com;',
       subject: 'Estado de cuenta '+nombreLimpio,
       attachments: [
          {
