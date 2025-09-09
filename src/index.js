@@ -8452,7 +8452,7 @@ app.get('/api/getdata_enviaranexo24semanalthyssenkrup', async function(req, res,
    columnasExpo.forEach((columna, index) => {
       wsExpo.cell(1, index + 1).string(columna).style(estiloTitulo);
    });
-     const facturasExpo = await mysql.sp_ObtenerDatosFacturaexpoSemanal(result[0].Pedimentos,2)
+     const facturasExpo = await mysql.sp_ObtenerDatosFacturaexpoSemanal_Thyssen(result[0].Pedimentos,2)
 
      //console.log(facturas); 
      var numfilaExpo=2;
