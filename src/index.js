@@ -8395,7 +8395,7 @@ app.get('/api/getdata_enviaranexo24semanalthyssenkrup', async function(req, res,
       const result = await sql.sp_ObtenerPedimentos_Semanal(1742);
       //console.log(result); 
       //PARA IMPORTASCION
-      const facturas = await mysql.sp_ObtenerDatosFacturaSemanal(result[0].Pedimentos,1)
+      const facturas = await mysql.sp_ObtenerDatosFacturaSemanal_Thyssen(result[0].Pedimentos,1)
 
       //console.log(facturas); 
       var numfila=2;

@@ -112,6 +112,22 @@ async function sp_ObtenerDatosFacturaSemanal(listaPedimentos, impexp) {
     });
   });
 }
+async function sp_ObtenerDatosFacturaSemanal_Thyssen(listaPedimentos, impexp) {
+  return new Promise((resolve, reject) => {
+    const query = `CALL sp_ObtenerDatosFacturaSemanal_Thyssen(?, ?)`;
+
+    connection.query(query, [ listaPedimentos, impexp], (error, results) => {
+      if (error) {
+        console.error('Error al ejecutar el SP: sp_ObtenerDatosFacturaSemanal_Thyssen', error.message);
+        return reject(`Error al ejecutar el SP: ${error.message}`);
+      }
+
+      const datos = results[0]; // Primer conjunto de resultados
+      resolve(datos || []);
+    });
+  });
+}
+
 async function sp_ObtenerDatosFacturaexpo(listaPedimentos, impexp) {
   return new Promise((resolve, reject) => {
     const query = `CALL sp_ObtenerDatosFacturaexpo(?, ?)`;
@@ -153,5 +169,5 @@ module.exports = {
   sp_ObtenerDatosFacturaexpo:sp_ObtenerDatosFacturaexpo,
   sp_ObtenerDatosFacturaSemanal:sp_ObtenerDatosFacturaSemanal,
   sp_ObtenerDatosFacturaexpoSemanal:sp_ObtenerDatosFacturaexpoSemanal,
-
+  sp_ObtenerDatosFacturaSemanal_Thyssen:sp_ObtenerDatosFacturaSemanal_Thyssen,
 };
