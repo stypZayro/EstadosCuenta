@@ -13,6 +13,7 @@ const sqlSIS = require('./conexionsis');
 const sqlSISTEMAS = require('./conexionsistemas');
 const sqlram = require('./conexionRam');
 const mysql = require('./conexionmysql');
+const mysqllocal = require('./conexionmysqllocal');
 const pgconect = require('./conexionzayprogrestsql');
 
 const socketIO = require('socket.io');
@@ -8341,6 +8342,7 @@ app.get('/api/getdata_enviaranexo24semanalthyssenkrup', async function(req, res,
             rejectUnauthorized: false
          }
       }
+      let cliente=4885;
       let transport = nodemailer.createTransport(config); 
       const wb = new xl.Workbook();
       const nombreArchivo = "Reporte Anexo 24";
@@ -8392,17 +8394,17 @@ app.get('/api/getdata_enviaranexo24semanalthyssenkrup', async function(req, res,
       });
 
      
-      const result = await sql.sp_ObtenerPedimentos_Semanal(1742);
+      const result = await sql.sp_ObtenerPedimentos_Semanal(cliente);
       //console.log(result); 
       //PARA IMPORTASCION
-      const facturas = await mysql.sp_ObtenerDatosFacturaSemanal_Thyssen(result[0].Pedimentos,1)
+      const facturas = await mysqllocal.sp_ObtenerDatosFacturaSemanal_Thyssen(result[0].Pedimentos,1)
 
       //console.log(facturas); 
       var numfila=2;
       for (const factura of facturas) {
 
          //console.log('Pedimento:', factura.Pedimento);
-         const informacionreporte=await sql.sp_ObtenerInformacionPedimento(1742,1,factura.Pedimento,0) 
+         const informacionreporte=await sql.sp_ObtenerInformacionPedimento(cliente,1,factura.Pedimento,0,factura.Partida) 
          //console.log(informacionreporte) 
          if (informacionreporte.length>0){
             
@@ -8452,14 +8454,14 @@ app.get('/api/getdata_enviaranexo24semanalthyssenkrup', async function(req, res,
    columnasExpo.forEach((columna, index) => {
       wsExpo.cell(1, index + 1).string(columna).style(estiloTitulo);
    });
-     const facturasExpo = await mysql.sp_ObtenerDatosFacturaexpoSemanal_Thyssen(result[0].Pedimentos,2)
+     const facturasExpo = await mysqllocal.sp_ObtenerDatosFacturaexpoSemanal_Thyssen(result[0].Pedimentos,2)
 
      //console.log(facturas); 
      var numfilaExpo=2;
      for (const facturaexpo  of facturasExpo ) {
 
         console.log('Pedimento:', facturaexpo.Pedimento);
-        const informacionreporteExpo =await sql.sp_ObtenerInformacionPedimento(1742,0,facturaexpo.Pedimento,facturaexpo.Partida) 
+        const informacionreporteExpo =await sql.sp_ObtenerInformacionPedimento(cliente,0,facturaexpo.Pedimento,facturaexpo.Partida) 
         //console.log(informacionreporteExpo ) 
         if (informacionreporteExpo.length>0){
          for (const reporteexpo of informacionreporteExpo)
@@ -8531,7 +8533,7 @@ app.get('/api/getdata_enviaranexo24semanalthyssenkrup', async function(req, res,
          }
      }
      */
-      await enviarMailAnexo24semanalthyssenkrup(nombreArchivo,transport);
+      //await enviarMailAnexo24semanalthyssenkrup(nombreArchivo,transport);
    } catch (err) {
        console.error('EL ERROR ES ' + err);
        res.status(500).send("Error al obtener los datos de la base de datos.");  

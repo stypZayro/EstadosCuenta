@@ -619,9 +619,7 @@ async function sp_ObtenerPedimentos_Semanal(ClienteId) {
   } catch (error) {
     console.error('Error al conectar o consultar la base de datos:', error.message);
     throw error; 
-  } finally {
-    sql.close(); // Cierra la conexión
-  }
+  } 
 }
 async function sp_totaldeclientesrevisarfraccionesIMMEX() {
   try {

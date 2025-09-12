@@ -12,13 +12,6 @@ const config = {
 
 const connection = mysql.createConnection(config);
 
-connection.connect(error => {
-  if (error) {
-    console.error('Error connecting to the database:', error);
-    return;
-  }
-  console.log('Connected to the MySQL database');
-});
 
 async function sp_obtener_datos_identificadores() {
   try {

@@ -20,13 +20,6 @@ const config = {
   },
   requestTimeout: 1300000,
 };
-  sql.connect(config)
-  .then(() => {
-      console.log('Connected to the SQL database DATASTAGE');
-  })
-  .catch(error => {
-      console.error('Error connecting to the database:', error);
-  });
 
 // --- Ejecuta el SP pasando el JSON armado
 async function ejecutaSPconJSON(tablasJSON) {
