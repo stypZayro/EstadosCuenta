@@ -1554,7 +1554,7 @@ app.get('/api/getdata_Thyssenkrupp/:fechaini/:fechafin', async function(req,res,
    wsPEN.cell(1,2,1,12,true).string("Razon Social").style(estiloTitulo);
    wsPEN.cell(2,1).string("971556").style(estilozamprov);
    wsPEN.cell(2,2,2,12,true).string("ZAMUDIO Y RODRIGUEZ").style(estilozamprov);
-  // const pgArr=await pgconect.getReporteThyssen(595);
+  //const pgArr=await pgconect.getReporteThyssen(595);
    const zayArr=await sqlzay.getdata_ReporteThyssenhrup_dolares(fechafin);
    
 
@@ -1607,7 +1607,7 @@ app.get('/api/getdata_Thyssenkrupp/:fechaini/:fechafin', async function(req,res,
       });
       //-------------------------------------------------------------------------------------
       //console.log(pgArr)
-     pgArr.forEach(reglon => {
+   /*  pgArr.forEach(reglon => {
       wsUSD.cell(numfila, 1).string(reglon.noproveedor || '').style(estilocontenido);
       wsUSD.cell(numfila, 2).string(reglon.razonsocial || '').style(estilocontenido);
       wsUSD.cell(numfila, 3).string(reglon.nofactura || '').style(estilocontenido);
@@ -1655,7 +1655,7 @@ app.get('/api/getdata_Thyssenkrupp/:fechaini/:fechafin', async function(req,res,
       numfila++;
       });
 
-
+*/
 
       wsUSD.cell(1,13).string("Total").style(estilototal);
       wsUSD.cell(2,13).number(total).style(estilototal);
@@ -1668,6 +1668,7 @@ app.get('/api/getdata_Thyssenkrupp/:fechaini/:fechafin', async function(req,res,
       else{
       }
    });*/
+
    const resultadopesos=await sqlzam.getdata_ReporteThyssenhrup_pesos(fechafin);
       //res.json(result);
       //console.log(result) 
@@ -7690,7 +7691,7 @@ app.get('/api/getdata_cumpleanios', async function(req, res, next) {
       let transport = nodemailer.createTransport(config); 
       let datoscumple=await sql.sp_informacion_cumpleanios()  
       datoscumple.forEach(async item=>{
-         //await enviarMailPORTALCUMPLE(transport,item.us_NombreCompleto);
+         await enviarMailPORTALCUMPLE(transport,item.us_NombreCompleto);
       })
       res.status(200).send(true);
        
