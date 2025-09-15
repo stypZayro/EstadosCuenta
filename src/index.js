@@ -13,7 +13,7 @@ const sqlSIS = require('./conexionsis');
 const sqlSISTEMAS = require('./conexionsistemas');
 const sqlram = require('./conexionRam');
 const mysql = require('./conexionmysql');
-const mysqllocal = require('./conexionmysqllocal');
+//const mysqllocal = require('./conexionmysqllocal');
 //const pgconect = require('./conexionzayprogrestsql');
 //
 const socketIO = require('socket.io');
@@ -8397,7 +8397,7 @@ app.get('/api/getdata_enviaranexo24semanalthyssenkrup', async function(req, res,
       const result = await sql.sp_ObtenerPedimentos_Semanal(cliente);
       //console.log(result); 
       //PARA IMPORTASCION
-      const facturas = await mysqllocal.sp_ObtenerDatosFacturaSemanal_Thyssen(result[0].Pedimentos,1)
+      const facturas = await mysql.sp_ObtenerDatosFacturaSemanal_Thyssen(result[0].Pedimentos,1)
 
       //console.log(facturas); 
       var numfila=2;
@@ -8454,7 +8454,7 @@ app.get('/api/getdata_enviaranexo24semanalthyssenkrup', async function(req, res,
    columnasExpo.forEach((columna, index) => {
       wsExpo.cell(1, index + 1).string(columna).style(estiloTitulo);
    });
-     const facturasExpo = await mysqllocal.sp_ObtenerDatosFacturaexpoSemanal_Thyssen(result[0].Pedimentos,2)
+     const facturasExpo = await mysql.sp_ObtenerDatosFacturaexpoSemanal_Thyssen(result[0].Pedimentos,2)
 
      //console.log(facturas); 
      var numfilaExpo=2;
