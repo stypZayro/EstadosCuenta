@@ -14,7 +14,7 @@ const sqlSISTEMAS = require('./conexionsistemas');
 const sqlram = require('./conexionRam');
 const mysql = require('./conexionmysql');
 const mysqllocal = require('./conexionmysqllocal');
-const pgconect = require('./conexionzayprogrestsql');
+//const pgconect = require('./conexionzayprogrestsql');
 
 const socketIO = require('socket.io');
 const http = require('http');
@@ -1556,7 +1556,7 @@ app.get('/api/getdata_Thyssenkrupp/:fechaini/:fechafin', async function(req,res,
    wsPEN.cell(1,2,1,12,true).string("Razon Social").style(estiloTitulo);
    wsPEN.cell(2,1).string("971556").style(estilozamprov);
    wsPEN.cell(2,2,2,12,true).string("ZAMUDIO Y RODRIGUEZ").style(estilozamprov);
-   const pgArr=await pgconect.getReporteThyssen(595);
+  // const pgArr=await pgconect.getReporteThyssen(595);
    const zayArr=await sqlzay.getdata_ReporteThyssenhrup_dolares(fechafin);
    
 
