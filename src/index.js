@@ -8613,8 +8613,11 @@ app.get('/api/getdata_enviaranexo24semanalgeneral', async function(req, res, nex
       let transport = nodemailer.createTransport(config); 
       const clientes=await sql.sp_obtenerclientesreporteanexo24();
       console.log(clientes.length)
+      let a=0;
+
       for (let i = 0; i < clientes.length; i++) {
          const c = clientes[i];
+         a=a+1;
          console.log(`Cliente #${i + 1}:`);
          console.log(`  Número:      ${c.Numero}`);
          console.log(`  Cliente_id:  ${c.Cliente_id}`);
@@ -8803,45 +8806,52 @@ app.get('/api/getdata_enviaranexo24semanalgeneral', async function(req, res, nex
                                  // Manejar el error
                            } else {*/
                                  console.log('Archivo descargado exitoso');
+                                 
                               
                         /*   }
                         });*/
                      }
-               });
+                  });
+                  const resultcorreos=await sql.getdata_correos_ejecutivos_cliente(c.Cliente_id);
+                  console.log(resultcorreos[0].correos,resultcorreos[0].correoscc)
+                  //await enviarMailAnexo24semanalgeneral(nombreArchivo,transport,c.Nom,resultcorreos[0].correos,resultcorreos[0].correoscc);
+
+                  
             }
 
          
          }
 
       }
-      if (i == (clientes.length-1)){
+      if (a === (clientes.length)){
          res.json('reportes anexo 24 enviados')
       }
 
    
-     await enviarMailAnexo24semanalthyssenkrup(nombreArchivo,transport);
+     
    } catch (err) {
        console.error('EL ERROR ES ' + err);
        res.status(500).send("Error al obtener los datos de la base de datos.");  
    }
 
 });
-enviarMailAnexo24semanalgeneral= async(nombreArchivo,transport) => {
+enviarMailAnexo24semanalgeneral= async(nombreArchivo,transport,Nombre,correos,correoscc) => {
       const meses = [
          "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
          "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
       ];
       
       const fechaActual = new Date();
-      fechaActual.setMonth(fechaActual.getMonth() - 1); // Retrocede un mes
+      fechaActual.setMonth(fechaActual.getMonth()-1); // Retrocede un mes
       
       const mesAnterior = meses[fechaActual.getMonth()];
       const año = fechaActual.getFullYear();
    const mensaje = {
       from:'sistemas@zayro.com',
-      to: 'programacion@zayro.com',
+      to: correos+', '+correoscc+',programacion@zayro.com,gerenciati@zayro.com',
+      //to: 'programacion@zayro.com',
       //cc: 'avazquez@zayro.com;sistemas@zayro.com ',
-      subject : `REPORTES MENSUALES PARA ANEXO 24 || ZAYRO || ${mesAnterior} ${año}`,
+      subject : `REPORTES MENSUALES ${Nombre} PARA ANEXO 24 || ZAYRO || ${mesAnterior} ${año}`,
       attachments: [
          {
             filename: nombreArchivo +'.xlsx',
