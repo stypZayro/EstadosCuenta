@@ -13,6 +13,7 @@ const sqlSIS = require('./conexionsis');
 const sqlSISTEMAS = require('./conexionsistemas');
 const sqlram = require('./conexionRam');
 const mysql = require('./conexionmysql');
+const pg = require('./conexionzayprogrestsql');
 ////
 const socketIO = require('socket.io');
 const http = require('http');
@@ -1555,7 +1556,8 @@ app.get('/api/getdata_Thyssenkrupp/:fechaini/:fechafin', async function(req,res,
    wsPEN.cell(2,1).string("971556").style(estilozamprov);
    wsPEN.cell(2,2,2,12,true).string("ZAMUDIO Y RODRIGUEZ").style(estilozamprov);
   //const pgArr=await pgconect.getReporteThyssen(595);
-   const zayArr=await sqlzay.getdata_ReporteThyssenhrup_dolares(fechafin);
+   const zayArr=await pg.getReporteThyssenDolaresHoy();
+   console.log(zayArr);
    
 
 
@@ -1578,33 +1580,48 @@ app.get('/api/getdata_Thyssenkrupp/:fechaini/:fechafin', async function(req,res,
       wsUSD.cell(4,15).string("Comentarios").style(estiloTitulo);
       let numfila=5;
       let total=0;
-      zayArr.forEach(reglonactual => {
-         wsUSD.cell(numfila,1).string(reglonactual.NoProveedor).style(estilocontenido);
-         wsUSD.cell(numfila,2).string(reglonactual.RazonSocial).style(estilocontenido);
-         wsUSD.cell(numfila,3).string(reglonactual.NoFactura).style(estilocontenido);
-         wsUSD.cell(numfila,4).string(reglonactual.Fecha).style(estilocontenido);
-         wsUSD.cell(numfila,5).number(reglonactual.Credito).style(estilocontenido);
-         wsUSD.cell(numfila,6).string(reglonactual.Vencimiento).style(estilocontenido);
-         wsUSD.cell(numfila,7).string(reglonactual.IMPEXP).style(estilocontenido);
-         if (reglonactual.PO==""){
-            wsUSD.cell(numfila,8).string("").style(estilocontenido);
-         }else{
-            wsUSD.cell(numfila,8).string(reglonactual.PO).style(estilocontenido);
-         }
-         wsUSD.cell(numfila,9).string(reglonactual.CuentaContable).style(estilocontenido);
-         if(reglonactual.SubTotal==""){
-            wsUSD.cell(numfila,10).number(0).style(estilocontenido);
-         }else{
-            wsUSD.cell(numfila,10).number(reglonactual.Subtotal).style(estilocontenido);
-         }
-         wsUSD.cell(numfila,11).number(reglonactual.IVA).style(estilocontenido);
-         wsUSD.cell(numfila,12).number(reglonactual.Retencion).style(estilocontenido);
-         wsUSD.cell(numfila,13).number(reglonactual.Total).style(estilocontenido);
-         total=total+reglonactual.Total
-         wsUSD.cell(numfila,14).string(reglonactual.Moneda).style(estilocontenido);
-         wsUSD.cell(numfila,15).string("").style(estilocontenido);
-         numfila=numfila+1;
-      });
+      const asText = v => (v == null ? '' : String(v));
+const asNum  = v => {
+  if (v == null || v === '') return 0;
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string') {
+    // quita $, comas, espacios, etc. (ajusta si usas coma decimal)
+    const n = Number(v.replace(/[^0-9.-]/g, ''));
+    return Number.isFinite(n) ? n : 0;
+  }
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
+// (opcional) estilo de moneda
+const estiloMoneda = wb.createStyle({ numberFormat: '#,##0.00' });
+
+zayArr.forEach(reglonactual => {
+  wsUSD.cell(numfila,1).string(asText(reglonactual.NoProveedor)).style(estilocontenido);
+  wsUSD.cell(numfila,2).string(asText(reglonactual.RazonSocial)).style(estilocontenido);
+  wsUSD.cell(numfila,3).string(asText(reglonactual.NoFactura)).style(estilocontenido);
+  wsUSD.cell(numfila,4).string(asText(reglonactual.Fecha)).style(estilocontenido);
+  wsUSD.cell(numfila,5).number(asNum(reglonactual.Credito)).style(estilocontenido);
+  wsUSD.cell(numfila,6).string(asText(reglonactual.Vencimiento)).style(estilocontenido);
+  wsUSD.cell(numfila,7).string(asText(reglonactual.IMPEXP)).style(estilocontenido);
+
+  wsUSD.cell(numfila,8).string(asText(reglonactual.PO)).style(estilocontenido);
+
+  wsUSD.cell(numfila,9).string(asText(reglonactual.CuentaContable)).style(estilocontenido);
+
+  // OJO: usa 'Subtotal' (no 'SubTotal')
+  wsUSD.cell(numfila,10).number(asNum(reglonactual.Subtotal)).style(estiloMoneda || estilocontenido);
+  wsUSD.cell(numfila,11).number(asNum(reglonactual.IVA)).style(estiloMoneda || estilocontenido);
+  wsUSD.cell(numfila,12).number(asNum(reglonactual.Retencion)).style(estiloMoneda || estilocontenido);
+  wsUSD.cell(numfila,13).number(asNum(reglonactual.Total)).style(estiloMoneda || estilocontenido);
+
+  total += asNum(reglonactual.Total); // evita concatenación de strings
+
+  wsUSD.cell(numfila,14).string(asText(reglonactual.Moneda)).style(estilocontenido);
+  wsUSD.cell(numfila,15).string(asText(reglonactual.Comentarios || '')).style(estilocontenido);
+
+  numfila += 1;
+});
       //-------------------------------------------------------------------------------------
       //console.log(pgArr)
    /*  pgArr.forEach(reglon => {
@@ -1791,6 +1808,7 @@ app.get('/api/getdata_Thyssenkrupp/:fechaini/:fechafin', async function(req,res,
    let transport = nodemailer.createTransport(config);
    
    const resp= await enviarMailEstadoCuentaThynss(nombreArchivo,transport,'');
+   //const resp='enviado'
    if (resp=='enviado'){
          res.json('enviado')
    }else{
@@ -8341,7 +8359,7 @@ app.get('/api/getdata_enviaranexo24semanalthyssenkrup', async function(req, res,
             rejectUnauthorized: false
          }
       }
-      let cliente=4885;
+      let cliente=1742;
       let transport = nodemailer.createTransport(config); 
       const wb = new xl.Workbook();
       const nombreArchivo = "Reporte Anexo 24";
@@ -8532,7 +8550,7 @@ app.get('/api/getdata_enviaranexo24semanalthyssenkrup', async function(req, res,
          }
      }
      */
-      //await enviarMailAnexo24semanalthyssenkrup(nombreArchivo,transport);
+      await enviarMailAnexo24semanalthyssenkrup(nombreArchivo,transport);
    } catch (err) {
        console.error('EL ERROR ES ' + err);
        res.status(500).send("Error al obtener los datos de la base de datos.");  
@@ -8547,7 +8565,7 @@ enviarMailAnexo24semanalthyssenkrup= async(nombreArchivo,transport) => {
       ];
       
       const fechaActual = new Date();
-      fechaActual.setMonth(fechaActual.getMonth() - 1); // Retrocede un mes
+      fechaActual.setMonth(fechaActual.getMonth()); // Retrocede un mes
       
       const mesAnterior = meses[fechaActual.getMonth()];
       const año = fechaActual.getFullYear();

@@ -25,19 +25,14 @@ async function testConnection() {
     console.error('❌ Error al conectar:', err);
   }
 }
-/**
- * Ejecuta el SP sp_reporte_thyssenkrup y devuelve sus filas.
- * @param {number} clienteId 
- * @returns {Promise<Array<Object>>}
- */
-async function getReporteThyssen(clienteId) {
-  const sql = `SELECT * FROM sp_reporte_thyssenkrup($1)`;
-  const params = [clienteId];
-  const { rows } = await pool.query(sql, params);
+
+// (Opcional) versión con “hoy” desde la BD
+async function getReporteThyssenDolaresHoy() {
+  const sql = `SELECT * FROM sp_reportethyssenhrup_dolares(current_date)`;
+  const { rows } = await pool.query(sql);
   return rows;
 }
-
 module.exports = {
   testConnection,
-  getReporteThyssen,
+  getReporteThyssenDolaresHoy
 };
