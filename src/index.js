@@ -8345,6 +8345,225 @@ enviarMailAnexo24semanalrochester= async(nombreArchivo,transport) => {
 /**************************************************************************************/
 /**************************************************************************************/
 /**************************************************************************************/
+app.get('/api/getdata_enviaranexo24semanalthyssenkrupceleritas', async function(req, res, next) {
+   try {
+      let config = {
+         host:process.env.hostemail,
+         port:process.env.portemail,
+         secure: true,
+         auth: {
+            user:process.env.useremail,
+            pass:process.env.passemail
+         },
+         tls: {
+            rejectUnauthorized: false
+         }
+      }
+      let cliente=1742;
+      let transport = nodemailer.createTransport(config); 
+      const wb = new xl.Workbook();
+      const nombreArchivo = "Reporte Anexo 24";
+      const ws = wb.addWorksheet("Importación");
+      const wsExpo = wb.addWorksheet("Exportación");
+
+      const estiloTitulo = wb.createStyle({
+          font: {
+              name: 'Arial',
+              color: '#FFFFFF',
+              size: 10,
+              bold: true,
+          },
+          fill: {
+              type: 'pattern',
+              patternType: 'solid',
+              fgColor: '#630b57',
+          },
+          alignment: {
+            horizontal: 'center',
+            vertical: 'center',
+          },
+      });
+      const estilocontenido = wb.createStyle({
+          font: {
+              name: 'Arial',
+              color: '#000000',
+              size: 10,
+          },
+          alignment: {
+            horizontal: 'center',
+            vertical: 'center',
+          },
+      });
+      const estiloMoneda = wb.createStyle({
+         numberFormat: '"$"#,##0.00', // formato con símbolo de dólar y dos decimales
+         alignment: {
+             horizontal: 'right'
+         }
+     });
+      const columnas = [
+         "Pedimento","Aduana","Clave","Fecha de Pago","Proveedor","Factura",	
+         "Fecha Factura	",	"Clave de Insumo (NP)",	"Fraccion",	"Origen","Tratado"
+         ,"Cantidad UMComercial","UMComercial",	"Valor Aduana",	"Valor Comercial",	
+         "TIGI","FP IGI","FP IVA","FP IEPS",	"Tipo de cambio",	"Partida Pedimento","InvoiceNo","EntryNumber","partNumber"
+     ];
+      columnas.forEach((columna, index) => {
+         ws.cell(1, index + 1).string(columna).style(estiloTitulo);
+      });
+
+     
+      const result = await sql.sp_ObtenerPedimentos_Semanal_ThyssenCeleritas(cliente);
+      //console.log(result); 
+      //PARA IMPORTASCION
+      const facturas = await mysql.sp_ObtenerDatosFacturaSemanal_ThyssenCeleritas(result[0].Pedimentos,1)
+
+      //console.log(facturas); 
+      var numfila=2;
+      for (const factura of facturas) {
+
+         //console.log('Pedimento:', factura.Pedimento);
+         const informacionreporte=await sql.sp_ObtenerInformacionPedimentoThyssenCeleritas(cliente,1,factura.Pedimento,0,factura.Partida) 
+        // console.log(informacionreporte) 
+         if (informacionreporte.length>0){
+            
+            for (const reporte of informacionreporte)
+            {
+               ws.cell(numfila, 1).string(reporte.Pedimento.toString()).style(estilocontenido);
+               ws.cell(numfila, 2).string(reporte.Aduana.toString()).style(estilocontenido);
+               ws.cell(numfila, 3).string(reporte.Clave.toString()).style(estilocontenido);
+
+               ws.cell(numfila,4).string(factura.FechadePago).style(estilocontenido);
+               ws.cell(numfila, 5).string(factura.Proveedor.toString()).style(estilocontenido);
+               ws.cell(numfila, 6).string(reporte.Factura.toString()).style(estilocontenido);
+               ws.cell(numfila,7).string(factura.FechaFactura).style(estilocontenido);
+
+               ws.cell(numfila, 8).string(reporte.Producto.toString()).style(estilocontenido);
+               ws.cell(numfila, 9).string(reporte.Fraccion.toString().substring(0, 8)).style(estilocontenido)
+               ws.cell(numfila,10).string(reporte.OrigenDestino.toString()).style(estilocontenido);
+               ws.cell(numfila,11).string(reporte.Tratado.toString()).style(estilocontenido);
+
+               ws.cell(numfila,12).number(Number(reporte.CantidadUMComercial)).style(estilocontenido);
+               ws.cell(numfila,13).string(factura.UnidadMedidaComercial.toString().padStart(2, '0')).style(estilocontenido);
+               ws.cell(numfila, 14).number(Number(factura.ValorAduana)).style(estiloMoneda);
+               ws.cell(numfila, 15).number(Number(reporte.ValorComercial)).style(estiloMoneda);
+
+               ws.cell(numfila,16).number(Number(reporte.TIGI)).style(estilocontenido);
+               ws.cell(numfila,17).number(Number(reporte.FPIGI)).style(estilocontenido);
+               ws.cell(numfila,18).number(Number(reporte.FPIVA)).style(estilocontenido);
+               ws.cell(numfila,19).number(Number(reporte.FPIEPS)).style(estilocontenido);
+
+               ws.cell(numfila,20).number(Number(factura.Tipodecambio)).style(estilocontenido);
+               ws.cell(numfila,21).number(Number(reporte.Renglon)).style(estilocontenido);
+               ws.cell(numfila,22).string(reporte.InvoiceNo.toString()).style(estilocontenido);
+               ws.cell(numfila,23).string(reporte.EntryNumber.toString()).style(estilocontenido);
+               ws.cell(numfila,24).string(reporte.partNumber.toString()).style(estilocontenido);
+
+               numfila++;
+            }
+            
+
+         }
+
+     }
+
+     const columnasExpo = [
+      "Pedimento","Aduana","Clave","Fecha de Pago","Cliente","Factura",	
+      "Fecha Factura	",	"Clave de Insumo (NP)",	"Fraccion",	"Destino"
+      ,"Cantidad UMComercial","UMComercial",	"Valor Comercial",	
+      "Valor USD",	"Tipo de cambio",	"Partida Pedimento","InvoiceNo","EntryNumber","partNumber"
+  ];
+   columnasExpo.forEach((columna, index) => {
+      wsExpo.cell(1, index + 1).string(columna).style(estiloTitulo);
+   });
+     const facturasExpo = await mysql.sp_ObtenerDatosFacturaexpoSemanal_ThyssenCeleritas(result[0].Pedimentos,2)
+
+     //console.log(facturas); 
+     var numfilaExpo=2;
+     for (const facturaexpo  of facturasExpo ) {
+
+        //console.log('Pedimento:', facturaexpo.Pedimento);
+        const informacionreporteExpo =await sql.sp_ObtenerInformacionPedimentoThyssenCeleritas(cliente,0,facturaexpo.Pedimento,facturaexpo.Partida) 
+        //console.log(informacionreporteExpo ) 
+        if (informacionreporteExpo.length>0){
+         for (const reporteexpo of informacionreporteExpo)
+            {
+               wsExpo.cell(numfilaExpo, 1).string(reporteexpo.Pedimento.toString()).style(estilocontenido);
+               wsExpo.cell(numfilaExpo, 2).string(reporteexpo.Aduana.toString()).style(estilocontenido);
+               wsExpo.cell(numfilaExpo, 3).string(reporteexpo.Clave.toString()).style(estilocontenido);
+
+               wsExpo.cell(numfilaExpo,4).string(facturaexpo.FechadePago).style(estilocontenido);
+               wsExpo.cell(numfilaExpo, 5).string(facturaexpo.Proveedor.toString()).style(estilocontenido);
+               wsExpo.cell(numfilaExpo, 6).string(reporteexpo.Factura.toString()).style(estilocontenido);
+               wsExpo.cell(numfilaExpo,7).string(facturaexpo.FechaFactura).style(estilocontenido);
+
+               wsExpo.cell(numfilaExpo, 8).string(reporteexpo.Producto.toString()).style(estilocontenido);
+               wsExpo.cell(numfilaExpo, 9).string(reporteexpo.Fraccion.toString().substring(0, 8)).style(estilocontenido);
+
+               wsExpo.cell(numfilaExpo,10).string(reporteexpo.OrigenDestino.toString()).style(estilocontenido);
+            
+               wsExpo.cell(numfilaExpo,11).number(Number(reporteexpo.CantidadUMComercial)).style(estilocontenido);
+               wsExpo.cell(numfilaExpo,12).string(facturaexpo.UnidadMedidaComercial.toString().padStart(2, '0')).style(estilocontenido);
+               let valorComercial = Number(reporteexpo.ValorComercial);
+               let tipoCambio = Number(facturaexpo.Tipodecambio);
+               let resultado = valorComercial * tipoCambio;
+
+               wsExpo.cell(numfilaExpo, 13).number(resultado).style(estiloMoneda);
+               //wsExpo.cell(numfilaExpo,13).number(Number(reporteexpo.ValorComercial)).style(estiloMoneda);
+               wsExpo.cell(numfilaExpo,14).number(Number(facturaexpo.ValorDolares)).style(estiloMoneda);
+
+               wsExpo.cell(numfilaExpo,15).number(Number(facturaexpo.Tipodecambio)).style(estilocontenido);
+               wsExpo.cell(numfilaExpo,16).number(Number(reporteexpo.Renglon)).style(estilocontenido);
+               wsExpo.cell(numfilaExpo,17).string(reporteexpo.InvoiceNo.toString()).style(estilocontenido);
+               wsExpo.cell(numfilaExpo,18).string(reporteexpo.EntryNumber.toString()).style(estilocontenido);
+               wsExpo.cell(numfilaExpo,19).string(reporteexpo.partNumber.toString()).style(estilocontenido);
+
+               numfilaExpo++;
+            }
+           
+        }
+    }
+     const pathExcel=path.join(__dirname,'excel',nombreArchivo+'.xlsx');
+      //Guardar
+      await wb.write(pathExcel, (err, stats) => {
+         if (err) {
+            console.error('Error al guardar el archivo de Excel:', err);
+            
+         } else {
+            console.log('Archivo de Excel guardado exitosamente en:', pathExcel);
+            // Descargar el archivo de Excel
+            res.download(pathExcel, nombreArchivo+'.xlsx', (err) => {
+               if (err) {
+                     console.error('Error al descargar el archivo:', err);
+                     // Manejar el error
+               } else {
+                     console.log('Archivo descargado exitoso');
+                   
+               }
+            });
+         }
+   });
+   /*
+     //PARA EXPORTACION
+     const facturasExpo = await mysql.sp_ObtenerDatosFactura(result[0].Pedimentos,2)
+
+      //console.log(facturas); 
+      for (const facturaExpo  of facturasExpo ) {
+
+         console.log('Pedimento:', facturaExpo.Pedimento);
+         const informacionreporteExpo =await sql.sp_ObtenerInformacionPedimento(2316,0,facturaExpo.Pedimento) 
+         console.log(informacionreporteExpo ) 
+         if (informacionreporteExpo.length>0){
+            
+         }
+     }
+     */
+      //await enviarMailAnexo24semanalthyssenkrup(nombreArchivo,transport);
+   } catch (err) {
+       console.error('EL ERROR ES ' + err);
+       res.status(500).send("Error al obtener los datos de la base de datos.");  
+   }
+   
+
+});
 app.get('/api/getdata_enviaranexo24semanalthyssenkrup', async function(req, res, next) {
    try {
       let config = {
@@ -8814,7 +9033,7 @@ app.get('/api/getdata_enviaranexo24semanalgeneral', async function(req, res, nex
                   });
                   const resultcorreos=await sql.getdata_correos_ejecutivos_cliente(c.Cliente_id);
                   console.log(resultcorreos[0].correos,resultcorreos[0].correoscc)
-                  //await enviarMailAnexo24semanalgeneral(nombreArchivo,transport,c.Nom,resultcorreos[0].correos,resultcorreos[0].correoscc);
+                  await enviarMailAnexo24semanalgeneral(nombreArchivo,transport,c.Nom,resultcorreos[0].correos,resultcorreos[0].correoscc);
 
                   
             }

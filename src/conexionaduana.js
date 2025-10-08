@@ -591,6 +591,25 @@ async function sp_ObtenerInformacionPedimento(ClienteId,ImpExp,Pedimento,renglon
     sql.close(); // Cierra la conexión
   }
 }
+async function sp_ObtenerInformacionPedimentoThyssenCeleritas(ClienteId,ImpExp,Pedimento,renglon) {
+  try {
+    let pool = await sql.connect(config);
+
+    let resultado = await pool.request()
+      .input('ClienteId', sql.Int, ClienteId)
+      .input('ImpExp', sql.Int, ImpExp)
+      .input('Pedimento', sql.VarChar(8), Pedimento)
+      .input('Partida', sql.Int, renglon)
+      .execute('aduana.dbo.sp_ObtenerInformacionPedimentoThyssenCeleritas'); 
+
+    return resultado.recordset;
+  } catch (error) {
+    console.error('Error al conectar o consultar la base de datos:', error.message);
+    throw error; 
+  } finally {
+    sql.close(); // Cierra la conexión
+  }
+}
 async function sp_ObtenerPedimentos(ClienteId) {
   try {
     let pool = await sql.connect(config);
@@ -614,6 +633,20 @@ async function sp_ObtenerPedimentos_Semanal(ClienteId) {
     let resultado = await pool.request()
       .input('ClienteId', sql.Int, ClienteId)
       .execute('aduana.dbo.sp_ObtenerPedimentos_Semanal'); 
+
+    return resultado.recordset;
+  } catch (error) {
+    console.error('Error al conectar o consultar la base de datos:', error.message);
+    throw error; 
+  } 
+}
+async function sp_ObtenerPedimentos_Semanal_ThyssenCeleritas(ClienteId) {
+  try {
+    let pool = await sql.connect(config);
+
+    let resultado = await pool.request()
+      .input('ClienteId', sql.Int, ClienteId)
+      .execute('aduana.dbo.sp_ObtenerPedimentos_Semanal_ThyssenCeleritas'); 
 
     return resultado.recordset;
   } catch (error) {
@@ -898,4 +931,6 @@ module.exports={
   sp_noexisteboxid:sp_noexisteboxid,
   facturakmx:facturakmx,
     facturakmx_inventario:facturakmx_inventario,
+    sp_ObtenerPedimentos_Semanal_ThyssenCeleritas:sp_ObtenerPedimentos_Semanal_ThyssenCeleritas,
+    sp_ObtenerInformacionPedimentoThyssenCeleritas:sp_ObtenerInformacionPedimentoThyssenCeleritas,
 }

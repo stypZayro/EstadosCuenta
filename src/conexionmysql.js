@@ -120,6 +120,21 @@ async function sp_ObtenerDatosFacturaSemanal_Thyssen(listaPedimentos, impexp) {
     });
   });
 }
+async function sp_ObtenerDatosFacturaSemanal_ThyssenCeleritas(listaPedimentos, impexp) {
+  return new Promise((resolve, reject) => {
+    const query = `CALL sp_ObtenerDatosFacturaSemanal_ThyssenCeleritas(?, ?)`;
+
+    connection.query(query, [ listaPedimentos, impexp], (error, results) => {
+      if (error) {
+        console.error('Error al ejecutar el SP: sp_ObtenerDatosFacturaSemanal_ThyssenCeleritas', error.message);
+        return reject(`Error al ejecutar el SP: ${error.message}`);
+      }
+
+      const datos = results[0]; // Primer conjunto de resultados
+      resolve(datos || []);
+    });
+  });
+}
 
 async function sp_ObtenerDatosFacturaexpo(listaPedimentos, impexp) {
   return new Promise((resolve, reject) => {
@@ -167,7 +182,21 @@ async function sp_ObtenerDatosFacturaexpoSemanal_Thyssen(listaPedimentos, impexp
   });
 }
 
+async function sp_ObtenerDatosFacturaexpoSemanal_ThyssenCeleritas(listaPedimentos, impexp) {
+  return new Promise((resolve, reject) => {
+    const query = `CALL sp_ObtenerDatosFacturaexpoSemanal_ThyssenCeleritas(?, ?)`;
 
+    connection.query(query, [ listaPedimentos, impexp], (error, results) => {
+      if (error) {
+        console.error('Error al ejecutar el SP: sp_ObtenerDatosFacturaexpoSemanal_ThyssenCeleritas', error.message);
+        return reject(`Error al ejecutar el SP: ${error.message}`);
+      }
+
+      const datos = results[0]; // Primer conjunto de resultados
+      resolve(datos || []);
+    });
+  });
+}
 
 
 module.exports = {
@@ -180,4 +209,6 @@ module.exports = {
   sp_ObtenerDatosFacturaexpoSemanal:sp_ObtenerDatosFacturaexpoSemanal,
   sp_ObtenerDatosFacturaSemanal_Thyssen:sp_ObtenerDatosFacturaSemanal_Thyssen,
   sp_ObtenerDatosFacturaexpoSemanal_Thyssen:sp_ObtenerDatosFacturaexpoSemanal_Thyssen,
+  sp_ObtenerDatosFacturaSemanal_ThyssenCeleritas:sp_ObtenerDatosFacturaSemanal_ThyssenCeleritas,
+  sp_ObtenerDatosFacturaexpoSemanal_ThyssenCeleritas:sp_ObtenerDatosFacturaexpoSemanal_ThyssenCeleritas,
 };
