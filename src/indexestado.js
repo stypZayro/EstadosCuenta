@@ -173,7 +173,7 @@ app.use((req, res, next) => {
 // ====================== Rutas privadas /api ============================
 const api = express.Router();
 api.use(authBearer); // ✅ toda /api requiere token (usa tu verificador real)
-app.use('/api', api);
+app.use('/estadoscuenta', api);
 
 // ====== Rate limit fuerte para descargas/reportes ======
 const heavyLimiter = rateLimit({
@@ -557,7 +557,7 @@ enviarMailEstadoCuentaThynss=async(nombreArchivo,transport,correos)=>{
 /**************************************************************************************/
 /**************************************************************************************/
 /**************************************************************************************/
-app.get('/api/getdata_estadosdecuentanld', async function(req, res, next) {
+app.get('/estadoscuenta/getdata_estadosdecuentanld', async function(req, res, next) {
    const clientes=await sqlzam.sp_clientesestadocuenta();
    let config = {
       host:process.env.hostemail,
@@ -1286,7 +1286,7 @@ enviarMailNLD = async(nombreArchivo,transport, correos,nombreLimpio) => {
 /**************************************************************************************/
 /**************************************************************************************/
 /**************************************************************************************/
-app.get('/api/getdata_estadosdecuentamxn', async function(req, res, next) {
+app.get('/estadoscuenta/getdata_estadosdecuentamxn', async function(req, res, next) {
    const clientes=await sqlzam.sp_clientesestadocuenta2();
    let config = {
       host:process.env.hostemail,
@@ -2017,7 +2017,7 @@ enviarMailMXN = async(nombreArchivo,transport, correos,nombreLimpio) => {
 /**************************************************************************************/
 /**************************************************************************************/
 /**************************************************************************************/
-app.get('/api/getdata_estadosdecuentadll', async function(req, res, next) {
+app.get('/estadoscuenta/getdata_estadosdecuentadll', async function(req, res, next) {
    const clientes=await sqlzay.sp_clientesestadocuenta();
    let config = {
       host:process.env.hostemail,
