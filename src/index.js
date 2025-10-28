@@ -556,7 +556,7 @@ enviarMailEstadoCuentaThynss=async(nombreArchivo,transport,correos)=>{
 
 /**************************************************************************************/
 /**************************************************************************************/
-/**************************************************************************************/
+/******************cm********************************************************************/
 app.get('/estadoscuenta/getdata_estadosdecuentanld', async function(req, res, next) {
    const clientes=await sqlzam.sp_clientesestadocuenta();
    let config = {
@@ -1261,8 +1261,8 @@ app.get('/estadoscuenta/getdata_estadosdecuentanld', async function(req, res, ne
 enviarMailNLD = async(nombreArchivo,transport, correos,nombreLimpio) => {
    const mensaje = {
       from:'sistemas@zayro.com',
-      //to: 'cobranza@zayro.com;sistemas@zayro.com;'+correos,
-      to: 'programacion@zayro.com;',
+      to: 'cobranza@zayro.com;sistemas@zayro.com;'+correos,
+      //to: 'programacion@zayro.com;',
       subject: 'Estado de cuenta '+nombreLimpio,
       attachments: [
          {
